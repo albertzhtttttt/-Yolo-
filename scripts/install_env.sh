@@ -57,7 +57,7 @@ pip install \
 echo "[6/7] 安装地理信息处理库..."
 pip install \
     rasterio==1.3.11 \
-    pyproj==3.6.1 \
+    pyproj==3.5.0 \
     simplekml==1.3.6 \
     pyshp==2.3.1 \
     shapely==2.0.6
