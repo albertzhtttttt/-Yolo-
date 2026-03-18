@@ -49,7 +49,7 @@ pip install \
     Pillow==10.4.0 \
     scipy==1.10.1 \
     scikit-image==0.21.0 \
-    albumentations==1.4.20
+    albumentations==1.4.18
 
 # --------------------------------------------------------------------------
 # 6. 安装地理信息处理库（用于 GeoTIFF 预测输出 KML/SHP，方案A）
