@@ -44,7 +44,7 @@ pip install "gitpython>=3.1.30" "setuptools>=65.5.1"
 # --------------------------------------------------------------------------
 echo "[5/7] 安装图像处理库..."
 pip install \
-    opencv-python==4.12.0.86 \
+    opencv-python==4.12.0.88 \
     numpy==1.24.4 \
     Pillow==10.4.0 \
     scipy==1.13.1 \
