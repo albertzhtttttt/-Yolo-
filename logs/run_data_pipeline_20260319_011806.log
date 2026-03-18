@@ -1,0 +1,43 @@
+2026-03-19 01:18:06 | INFO     | run_data_pipeline | 日志文件：/home6/zht/-Yolo-/logs/run_data_pipeline_20260319_011806.log
+2026-03-19 01:18:06 | INFO     | run_data_pipeline | ============================================================
+2026-03-19 01:18:06 | INFO     | run_data_pipeline | P1 数据准备全流程启动
+2026-03-19 01:18:06 | INFO     | run_data_pipeline | dataset=all, vis=True, no_augment=False
+2026-03-19 01:18:06 | INFO     | run_data_pipeline | ============================================================
+2026-03-19 01:18:06 | INFO     | run_data_pipeline | ============================================================
+2026-03-19 01:18:06 | INFO     | run_data_pipeline | 开始处理数据集：SATELLITE
+2026-03-19 01:18:06 | INFO     | run_data_pipeline | ============================================================
+2026-03-19 01:18:06 | INFO     | run_data_pipeline | ▶ [satellite] Step 1: 图像预处理
+2026-03-19 01:18:06 | INFO     | run_data_pipeline |   命令：/home6/lfy/anaconda3/envs/forest_gap/bin/python src/data_preparation/preprocess_satellite.py --config configs/satellite_config.yaml --vis
+2026-03-19 01:18:45 | INFO     | run_data_pipeline | ✓ [satellite] Step 1: 图像预处理 完成
+
+2026-03-19 01:18:45 | INFO     | run_data_pipeline | ▶ [satellite] Step 2: 数据集划分 (train/val/test)
+2026-03-19 01:18:45 | INFO     | run_data_pipeline |   命令：/home6/lfy/anaconda3/envs/forest_gap/bin/python src/data_preparation/build_dataset.py --dataset satellite --config configs/satellite_config.yaml --vis
+2026-03-19 01:19:07 | INFO     | run_data_pipeline | ✓ [satellite] Step 2: 数据集划分 (train/val/test) 完成
+
+2026-03-19 01:19:07 | INFO     | run_data_pipeline | ▶ [satellite] Step 3: 数据增强 (train only)
+2026-03-19 01:19:07 | INFO     | run_data_pipeline |   命令：/home6/lfy/anaconda3/envs/forest_gap/bin/python src/data_preparation/augment.py --dataset satellite --config configs/satellite_config.yaml
+2026-03-19 01:19:15 | INFO     | run_data_pipeline | ✓ [satellite] Step 3: 数据增强 (train only) 完成
+
+2026-03-19 01:19:15 | INFO     | run_data_pipeline | ✓✓ SATELLITE 数据准备全部完成！
+
+2026-03-19 01:19:15 | INFO     | run_data_pipeline | ============================================================
+2026-03-19 01:19:15 | INFO     | run_data_pipeline | 开始处理数据集：UAV
+2026-03-19 01:19:15 | INFO     | run_data_pipeline | ============================================================
+2026-03-19 01:19:15 | INFO     | run_data_pipeline | ▶ [uav] Step 1: 图像预处理
+2026-03-19 01:19:15 | INFO     | run_data_pipeline |   命令：/home6/lfy/anaconda3/envs/forest_gap/bin/python src/data_preparation/preprocess_uav.py --config configs/uav_config.yaml --vis
+2026-03-19 01:19:36 | INFO     | run_data_pipeline | ✓ [uav] Step 1: 图像预处理 完成
+
+2026-03-19 01:19:36 | INFO     | run_data_pipeline | ▶ [uav] Step 2: 数据集划分 (train/val/test)
+2026-03-19 01:19:36 | INFO     | run_data_pipeline |   命令：/home6/lfy/anaconda3/envs/forest_gap/bin/python src/data_preparation/build_dataset.py --dataset uav --config configs/uav_config.yaml --vis
+2026-03-19 01:19:57 | INFO     | run_data_pipeline | ✓ [uav] Step 2: 数据集划分 (train/val/test) 完成
+
+2026-03-19 01:19:57 | INFO     | run_data_pipeline | ▶ [uav] Step 3: 数据增强 (train only)
+2026-03-19 01:19:57 | INFO     | run_data_pipeline |   命令：/home6/lfy/anaconda3/envs/forest_gap/bin/python src/data_preparation/augment.py --dataset uav --config configs/uav_config.yaml
+2026-03-19 01:20:27 | INFO     | run_data_pipeline | ✓ [uav] Step 3: 数据增强 (train only) 完成
+
+2026-03-19 01:20:27 | INFO     | run_data_pipeline | ✓✓ UAV 数据准备全部完成！
+
+2026-03-19 01:20:27 | INFO     | run_data_pipeline | ============================================================
+2026-03-19 01:20:27 | INFO     | run_data_pipeline | ✓✓✓ 全部数据准备完成！可以开始 P2 模型训练。
+2026-03-19 01:20:27 | INFO     | run_data_pipeline |     下一步：python src/train/train_yolov8.py --dataset satellite
+2026-03-19 01:20:27 | INFO     | run_data_pipeline | ============================================================

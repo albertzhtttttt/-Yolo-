@@ -1,0 +1,6 @@
+2026-03-19 02:02:44 | INFO     | evaluate_uav | 日志文件：/home6/zht/-Yolo-/logs/evaluate_uav_20260319_020244.log
+2026-03-19 02:02:44 | INFO     | evaluate_uav | ============================================================
+2026-03-19 02:02:44 | INFO     | evaluate_uav | 模型评估启动：UAV
+2026-03-19 02:02:44 | INFO     | evaluate_uav | 权重文件：/home6/zht/-Yolo-/runs/uav/yolov8/uav_yolov82/weights/best.pt
+2026-03-19 02:02:47 | INFO     | evaluate_uav | 自动找到 results.csv：/home6/zht/-Yolo-/runs/uav/yolov8/uav_yolov82/results.csv
+2026-03-19 02:03:25 | INFO     | evaluate_uav | 在 test 集上评估（conf=0.25, iou=0.45）...

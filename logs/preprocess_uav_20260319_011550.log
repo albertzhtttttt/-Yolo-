@@ -1,0 +1,51 @@
+2026-03-19 01:15:50 | INFO     | preprocess_uav | 日志文件：/home6/zht/-Yolo-/logs/preprocess_uav_20260319_011550.log
+2026-03-19 01:15:50 | INFO     | preprocess_uav | ============================================================
+2026-03-19 01:15:50 | INFO     | preprocess_uav | 无人机影像切片预处理开始
+2026-03-19 01:15:50 | INFO     | preprocess_uav | 找到 43 张无人机图像
+切片参数：tile_size=640, stride=320, min_visibility=0.3, neg_ratio=0.1
+2026-03-19 01:15:50 | INFO     | preprocess_uav |   [ 1/43] 10_orig.jpg → 总切片 12，保留 10（正样本 9，负样本 1），框数 9
+2026-03-19 01:15:50 | INFO     | preprocess_uav |   [ 2/43] 11_orig.jpg → 总切片 15，保留 8（正样本 6，负样本 2），框数 6
+2026-03-19 01:15:50 | INFO     | preprocess_uav |   [ 3/43] 12_orig.jpg → 总切片 12，保留 8（正样本 7，负样本 1），框数 7
+2026-03-19 01:15:50 | INFO     | preprocess_uav |   [ 4/43] 13_orig.jpg → 总切片 12，保留 4（正样本 2，负样本 2），框数 2
+2026-03-19 01:15:50 | INFO     | preprocess_uav |   [ 5/43] 14_orig.jpg → 总切片 20，保留 14（正样本 13，负样本 1），框数 13
+2026-03-19 01:15:50 | INFO     | preprocess_uav |   [ 6/43] 15_orig.jpg → 总切片 16，保留 12（正样本 12，负样本 0），框数 12
+2026-03-19 01:15:50 | INFO     | preprocess_uav |   [ 7/43] 16_orig.jpg → 总切片 12，保留 7（正样本 6，负样本 1），框数 6
+2026-03-19 01:15:50 | INFO     | preprocess_uav |   [ 8/43] 17_orig.jpg → 总切片 20，保留 5（正样本 4，负样本 1），框数 4
+2026-03-19 01:15:50 | INFO     | preprocess_uav |   [ 9/43] 18_orig.jpg → 总切片 8，保留 6（正样本 6，负样本 0），框数 6
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [10/43] 19_orig.jpg → 总切片 24，保留 7（正样本 6，负样本 1），框数 6
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [11/43] 1_orig.jpg → 总切片 15，保留 8（正样本 8，负样本 0），框数 8
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [12/43] 20_orig.jpg → 总切片 12，保留 7（正样本 5，负样本 2），框数 5
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [13/43] 21_orig.jpg → 总切片 12，保留 7（正样本 6，负样本 1），框数 6
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [14/43] 22_orig.jpg → 总切片 12，保留 5（正样本 4，负样本 1），框数 4
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [15/43] 23_orig.jpg → 总切片 12，保留 6（正样本 6，负样本 0），框数 6
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [16/43] 24_orig.jpg → 总切片 20，保留 8（正样本 6，负样本 2），框数 6
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [17/43] 25_orig.jpg → 总切片 16，保留 10（正样本 7，负样本 3），框数 7
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [18/43] 26_orig.jpg → 总切片 20，保留 6（正样本 6，负样本 0），框数 6
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [19/43] 27_orig.jpg → 总切片 20，保留 6（正样本 4，负样本 2），框数 4
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [20/43] 28_orig.jpg → 总切片 12，保留 3（正样本 3，负样本 0），框数 3
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [21/43] 29_orig.jpg → 总切片 12，保留 4（正样本 2，负样本 2），框数 2
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [22/43] 2_orig.jpg → 总切片 15，保留 6（正样本 6，负样本 0），框数 6
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [23/43] 30_orig.jpg → 总切片 20，保留 16（正样本 15，负样本 1），框数 19
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [24/43] 31_orig.jpg → 总切片 12，保留 5（正样本 4，负样本 1），框数 4
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [25/43] 32_orig.jpg → 总切片 12，保留 1（正样本 1，负样本 0），框数 1
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [26/43] 33_orig.jpg → 总切片 12，保留 3（正样本 2，负样本 1），框数 2
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [27/43] 34_orig.jpg → 总切片 12，保留 5（正样本 4，负样本 1），框数 4
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [28/43] 35_orig.jpg → 总切片 12，保留 2（正样本 2，负样本 0），框数 2
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [29/43] 36_orig.jpg → 总切片 6，保留 2（正样本 2，负样本 0），框数 2
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [30/43] 37_orig.jpg → 总切片 9，保留 3（正样本 1，负样本 2），框数 1
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [31/43] 38_orig.jpg → 总切片 6，保留 2（正样本 2，负样本 0），框数 2
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [32/43] 39_orig.jpg → 总切片 12，保留 3（正样本 2，负样本 1），框数 2
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [33/43] 3_orig.jpg → 总切片 12，保留 9（正样本 9，负样本 0），框数 9
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [34/43] 40_orig.jpg → 总切片 8，保留 2（正样本 2，负样本 0），框数 2
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [35/43] 41_orig.jpg → 总切片 15，保留 5（正样本 3，负样本 2），框数 3
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [36/43] 42_orig.jpg → 总切片 6，保留 3（正样本 1，负样本 2），框数 1
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [37/43] 43_orig.jpg → 总切片 4，保留 2（正样本 2，负样本 0），框数 2
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [38/43] 4_orig.jpg → 总切片 12，保留 3（正样本 3，负样本 0），框数 3
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [39/43] 5_orig.jpg → 总切片 12，保留 8（正样本 8，负样本 0），框数 8
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [40/43] 6_orig.jpg → 总切片 9，保留 6（正样本 6，负样本 0），框数 6
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [41/43] 7_orig.jpg → 总切片 12，保留 6（正样本 6，负样本 0），框数 6
+2026-03-19 01:15:51 | INFO     | preprocess_uav |   [42/43] 8_orig.jpg → 总切片 12，保留 5（正样本 4，负样本 1），框数 4
+2026-03-19 01:15:52 | INFO     | preprocess_uav |   [43/43] 9_orig.jpg → 总切片 15，保留 4（正样本 4，负样本 0），框数 4
+2026-03-19 01:15:52 | INFO     | preprocess_uav | 
+切片完成：43 张原图 → 252 个切片（正样本 217，负样本 35），共 221 个标注框
+2026-03-19 01:15:52 | INFO     | preprocess_uav | 切片映射已保存：data/yolo_dataset_uav/preprocessed/tile_map.txt

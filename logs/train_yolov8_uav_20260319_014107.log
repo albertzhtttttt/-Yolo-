@@ -1,0 +1,51 @@
+2026-03-19 01:41:07 | INFO     | train_yolov8_uav | 日志文件：/home6/zht/-Yolo-/logs/train_yolov8_uav_20260319_014107.log
+2026-03-19 01:41:07 | INFO     | train_yolov8_uav | ============================================================
+2026-03-19 01:41:07 | INFO     | train_yolov8_uav | YOLOv8 训练启动：UAV
+2026-03-19 01:41:07 | INFO     | train_yolov8_uav | 配置文件：configs/uav_config.yaml
+2026-03-19 01:41:07 | INFO     | train_yolov8_uav | 模型规格：yolov8n
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav | 自动选择 GPU：3（显存最空闲）
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav | 训练参数：
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   data                 = data/yolo_dataset_uav/dataset.yaml
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   imgsz                = 640
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   epochs               = 150
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   batch                = 16
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   lr0                  = 0.01
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   lrf                  = 0.01
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   momentum             = 0.937
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   weight_decay         = 0.0005
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   warmup_epochs        = 3
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   optimizer            = SGD
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   patience             = 50
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   seed                 = 42
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   device               = 3
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   workers              = 8
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   project              = runs/uav/yolov8
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   name                 = uav_yolov8
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   exist_ok             = False
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   verbose              = True
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   augment              = False
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   hsv_h                = 0.0
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   hsv_s                = 0.0
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   hsv_v                = 0.0
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   degrees              = 0.0
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   translate            = 0.0
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   scale                = 0.0
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   shear                = 0.0
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   perspective          = 0.0
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   flipud               = 0.0
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   fliplr               = 0.0
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   mosaic               = 0.0
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   mixup                = 0.0
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav |   copy_paste           = 0.0
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav | 迁移学习（COCO 预训练）：yolov8n.pt
+2026-03-19 01:41:10 | INFO     | train_yolov8_uav | 开始训练...
+2026-03-19 02:02:42 | INFO     | train_yolov8_uav | ============================================================
+2026-03-19 02:02:42 | INFO     | train_yolov8_uav | 训练完成！
+2026-03-19 02:02:42 | INFO     | train_yolov8_uav | 实验目录：/home6/zht/-Yolo-/runs/uav/yolov8/uav_yolov82
+2026-03-19 02:02:42 | INFO     | train_yolov8_uav | 最优权重：/home6/zht/-Yolo-/runs/uav/yolov8/uav_yolov82/weights/best.pt
+2026-03-19 02:02:42 | INFO     | train_yolov8_uav | 最优 epoch：73
+2026-03-19 02:02:42 | INFO     | train_yolov8_uav |   mAP@0.5    = 0.9708
+2026-03-19 02:02:42 | INFO     | train_yolov8_uav |   mAP@0.5:95 = 0.5439
+2026-03-19 02:02:42 | INFO     | train_yolov8_uav | ============================================================
+2026-03-19 02:02:42 | INFO     | train_yolov8_uav | 下一步：运行评估脚本
+2026-03-19 02:02:42 | INFO     | train_yolov8_uav |   python src/evaluate/evaluate.py --dataset uav --weights runs/uav/yolov8/uav_yolov82/weights/best.pt
