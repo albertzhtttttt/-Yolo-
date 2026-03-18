@@ -60,19 +60,23 @@ python scripts/run_data_pipeline.py --dataset all --vis
 | 文件 | 说明 |
 |------|------|
 | `scripts/run_train_pipeline.py` | 训练→评估全流程一键脚本，自动查找 best.pt，支持 `--eval_only` 仅评估模式 |
+| `scripts/train_bg.sh` | 后台运行训练流程，日志写入 `logs/train_bg_<timestamp>.log` |
 
 ### 服务器运行命令
 
 ```bash
-# 完整流程（训练 + 评估，两个数据集串行）
-python scripts/run_train_pipeline.py --dataset all
+# 完整流程（训练 + 评估，两个数据集串行，后台运行）
+bash scripts/train_bg.sh --dataset all
 
 # 指定更大模型和更多轮数
-python scripts/run_train_pipeline.py --dataset satellite --model yolov8s --epochs 200
+bash scripts/train_bg.sh --dataset satellite --model yolov8s --epochs 200
 
 # 训练完成后仅重新评估（不重新训练）
-python scripts/run_train_pipeline.py --dataset satellite --eval_only \
+bash scripts/train_bg.sh --dataset satellite --eval_only \
     --weights runs/satellite/yolov8/satellite_yolov8/weights/best.pt
+
+# 实时查看日志
+tail -f logs/train_bg_<timestamp>.log
 ```
 
 ### 评估输出目录
