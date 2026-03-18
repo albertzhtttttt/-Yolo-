@@ -11,6 +11,8 @@ plot_utils.py - 可视化工具模块
     from src.utils.plot_utils import setup_plot_style, PALETTE, save_fig
 """
 
+from __future__ import annotations
+
 import os
 import platform
 import matplotlib

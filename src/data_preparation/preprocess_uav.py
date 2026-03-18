@@ -24,6 +24,8 @@ preprocess_uav.py - 无人机影像预处理脚本（滑动窗口切片）
     data/yolo_dataset_uav/preprocessed/tile_map.txt  切片归属映射
 """
 
+from __future__ import annotations
+
 import argparse
 import os
 import random

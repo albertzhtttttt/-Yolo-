@@ -33,6 +33,8 @@ run_data_pipeline.py - P1 数据准备全流程一键运行脚本
     - 运行过程日志保存到 logs/ 目录
 """
 
+from __future__ import annotations
+
 import argparse
 import os
 import subprocess

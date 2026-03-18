@@ -26,6 +26,8 @@ build_dataset.py - YOLO 数据集构建脚本
     └── split_summary.txt   各子集统计信息
 """
 
+from __future__ import annotations
+
 import argparse
 import os
 import random

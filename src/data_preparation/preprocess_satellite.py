@@ -17,6 +17,8 @@ preprocess_satellite.py - 卫星影像预处理脚本
     data/yolo_dataset_satellite/preprocessed/stats.png 目标框分布统计图（--vis 时）
 """
 
+from __future__ import annotations
+
 import argparse
 import os
 import shutil

@@ -30,6 +30,8 @@ augment.py - 数据增强脚本
     不覆盖原始图像。
 """
 
+from __future__ import annotations
+
 import argparse
 import os
 import random
