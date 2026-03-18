@@ -29,6 +29,7 @@ train_yolov8.py - YOLOv8 模型训练脚本
 
 import argparse
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -38,6 +39,19 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.utils.logger import get_logger
+
+
+def _auto_select_gpu() -> str:
+    """返回显存最空闲的 GPU 编号，失败时返回 '0'。"""
+    try:
+        out = subprocess.check_output(
+            ["nvidia-smi", "--query-gpu=memory.free", "--format=csv,noheader,nounits"],
+            encoding="utf-8",
+        )
+        free = [int(x.strip()) for x in out.strip().splitlines()]
+        return str(free.index(max(free)))
+    except Exception:
+        return "0"
 
 
 def parse_args():
@@ -124,6 +138,8 @@ def build_train_args(cfg: dict, args) -> dict:
     if args.lr0:      train_args["lr0"]       = args.lr0
     if args.optimizer: train_args["optimizer"] = args.optimizer
     if args.device:   train_args["device"]    = args.device
+    else:
+        train_args["device"] = _auto_select_gpu()
     if args.workers:  train_args["workers"]   = args.workers
     if args.patience: train_args["patience"]  = args.patience
     if args.name:     train_args["name"]      = args.name
@@ -165,6 +181,8 @@ def main():
 
     # ── 构建训练参数 ──────────────────────────────────────────────────────────
     train_args = build_train_args(cfg, args)
+    if not args.device:
+        logger.info(f"自动选择 GPU：{train_args['device']}（显存最空闲）")
 
     logger.info("训练参数：")
     for k, v in train_args.items():
