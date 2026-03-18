@@ -125,13 +125,16 @@ def setup_plot_style(font_size: int = 12) -> None:
     chinese_font_path = _find_chinese_font()
 
     if chinese_font_path:
-        # 注册字体并设置为默认
-        prop = fm.FontProperties(fname=chinese_font_path)
-        font_name = prop.get_name()
-        plt.rcParams["font.family"] = ["sans-serif"]
-        plt.rcParams["font.sans-serif"] = [font_name, "DejaVu Sans"]
-        print(f"[plot_utils] 已加载中文字体：{font_name}")
-    else:
+        try:
+            prop = fm.FontProperties(fname=chinese_font_path)
+            font_name = prop.get_name()
+            plt.rcParams["font.family"] = ["sans-serif"]
+            plt.rcParams["font.sans-serif"] = [font_name, "DejaVu Sans"]
+            print(f"[plot_utils] 已加载中文字体：{font_name}")
+        except Exception:
+            chinese_font_path = None
+
+    if not chinese_font_path:
         # 未找到中文字体，使用默认字体（中文可能显示为方块，但不报错）
         print("[plot_utils] 警告：未找到中文字体，中文可能无法正常显示。")
         print("  建议安装：sudo apt install fonts-wqy-microhei")
