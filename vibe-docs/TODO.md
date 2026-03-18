@@ -321,4 +321,7 @@
 
 - [x] 需求文档 `vibe-docs/requirements.md` 已完成
 - [x] 执行计划 `vibe-docs/TODO.md` 已完成
-- [ ] **下一步：开始 P0 环境配置与 P1 数据准备脚本编写**
+- [x] **P0 完成**：`scripts/install_env.sh`、`scripts/init_dirs.sh`、`configs/*.yaml`、`src/utils/plot_utils.py`、`src/utils/logger.py`
+- [x] **P1 完成**：`src/data_preparation/preprocess_satellite.py`、`preprocess_uav.py`、`augment.py`、`build_dataset.py`、`scripts/run_data_pipeline.py`
+- [x] **P2 完成**：`src/train/train_yolov8.py`、`src/evaluate/evaluate.py`、`scripts/run_train_pipeline.py`
+- [ ] **下一步：将代码传输到服务器，执行 P1 数据流程 → P2 训练，根据结果迭代调参**

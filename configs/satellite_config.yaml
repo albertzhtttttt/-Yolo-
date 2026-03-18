@@ -1,0 +1,79 @@
+# =============================================================================
+# 卫星影像数据集配置文件
+# 路径：configs/satellite_config.yaml
+# =============================================================================
+
+# ── 数据路径 ──────────────────────────────────────────────────────────────────
+data:
+  orig_images: "data/orig_data/satellite/images"   # 原始图像目录
+  orig_labels: "data/orig_data/satellite/labels"   # 原始标注目录
+  output_dir:  "data/yolo_dataset_satellite"        # YOLO 数据集输出根目录
+  dataset_yaml: "data/yolo_dataset_satellite/dataset.yaml"
+
+# ── 预处理参数 ────────────────────────────────────────────────────────────────
+preprocess:
+  target_size: 640        # 统一输入尺寸（卫星图像从 256 缩放至 640）
+  interpolation: "bilinear"  # 缩放插值方式
+
+# ── 数据集划分 ────────────────────────────────────────────────────────────────
+split:
+  train_ratio: 0.70
+  val_ratio:   0.15
+  test_ratio:  0.15
+  seed: 42                # 固定随机种子，保证可复现
+
+# ── 数据增强参数（仅对 train 集生效）──────────────────────────────────────────
+augmentation:
+  enabled: true
+  augment_factor: 8       # 每张原始图像生成 N 张增强图像
+
+  # 几何增强
+  flip_horizontal: true   # 水平翻转概率
+  flip_vertical:   true   # 垂直翻转概率
+  rotate_90:       true   # 随机90°旋转（0/90/180/270）
+  scale_range: [0.8, 1.2] # 随机缩放范围
+
+  # 色彩增强（HSV 空间）
+  hsv_hue:        0.015   # 色相抖动幅度
+  hsv_saturation: 0.7     # 饱和度抖动幅度
+  hsv_value:      0.4     # 亮度抖动幅度
+
+  # 噪声与模糊
+  gaussian_noise:  true   # 高斯噪声
+  gaussian_noise_std: 15  # 噪声标准差
+  random_blur:     true   # 随机模糊
+  blur_kernel_range: [3, 7]  # 模糊核大小范围（奇数）
+
+  # Mosaic 拼接
+  mosaic: true            # 4图合一拼接
+  mosaic_prob: 0.5        # Mosaic 触发概率
+
+# ── 训练超参数 ────────────────────────────────────────────────────────────────
+train:
+  model: "yolov8n"        # 初始选型（n/s/m 依次尝试）
+  imgsz: 640              # 输入尺寸（固定）
+  epochs: 150
+  batch: 16
+  lr0: 0.01               # 初始学习率
+  lrf: 0.01               # 最终学习率（lr0 * lrf）
+  momentum: 0.937
+  weight_decay: 0.0005
+  warmup_epochs: 3
+  optimizer: "SGD"        # SGD 或 AdamW
+  patience: 50            # 早停耐心值（epoch 数）
+  seed: 42
+  pretrained: true        # 使用 COCO 预训练权重
+  device: "0"             # GPU 编号
+  workers: 8              # DataLoader 工作进程数
+  save_dir: "runs/satellite/yolov8"
+  project_name: "satellite_yolov8"
+
+# ── 类别定义 ──────────────────────────────────────────────────────────────────
+classes:
+  nc: 1
+  names: ["gap"]          # 林窗
+
+# ── 评估参数 ──────────────────────────────────────────────────────────────────
+evaluate:
+  conf_thres: 0.25        # 置信度阈值
+  iou_thres:  0.45        # NMS IoU 阈值

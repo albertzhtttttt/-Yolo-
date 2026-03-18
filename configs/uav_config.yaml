@@ -1,0 +1,83 @@
+# =============================================================================
+# 无人机影像数据集配置文件
+# 路径：configs/uav_config.yaml
+# =============================================================================
+
+# ── 数据路径 ──────────────────────────────────────────────────────────────────
+data:
+  orig_images: "data/orig_data/uav/images"          # 原始图像目录
+  orig_labels: "data/orig_data/uav/labels"          # 原始标注目录
+  output_dir:  "data/yolo_dataset_uav"              # YOLO 数据集输出根目录
+  dataset_yaml: "data/yolo_dataset_uav/dataset.yaml"
+
+# ── 预处理参数（无人机图像切片参数）─────────────────────────────────────────
+preprocess:
+  target_size: 640        # 切片尺寸（固定 640×640）
+  stride: 320             # 滑动步长（50% 重叠）
+  interpolation: "bilinear"
+  min_bbox_area: 0.0001   # 切片后保留标注框的最小面积比（相对于切片面积）
+  min_bbox_visibility: 0.3  # 切片后标注框保留的最低可见比例
+  neg_sample_ratio: 0.1   # 无目标空白切片的保留比例（负样本）
+
+# ── 数据集划分 ────────────────────────────────────────────────────────────────
+split:
+  train_ratio: 0.70
+  val_ratio:   0.15
+  test_ratio:  0.15
+  seed: 42                # 按原始图像（非切片）划分，切片归属随原图
+
+# ── 数据增强参数（仅对 train 集生效）──────────────────────────────────────────
+augmentation:
+  enabled: true
+  augment_factor: 5       # 无人机数据量较大，增强倍数适当降低
+
+  # 几何增强
+  flip_horizontal: true
+  flip_vertical:   true
+  rotate_90:       true
+  scale_range: [0.8, 1.2]
+
+  # 色彩增强（HSV 空间）
+  hsv_hue:        0.015
+  hsv_saturation: 0.7
+  hsv_value:      0.4
+
+  # 噪声与模糊
+  gaussian_noise:  true
+  gaussian_noise_std: 10
+  random_blur:     true
+  blur_kernel_range: [3, 5]
+
+  # Mosaic 拼接
+  mosaic: true
+  mosaic_prob: 0.5
+
+# ── 训练超参数 ────────────────────────────────────────────────────────────────
+train:
+  model: "yolov8n"        # 初始选型（n/s/m 依次尝试）
+  imgsz: 640
+  epochs: 150
+  batch: 16
+  lr0: 0.01
+  lrf: 0.01
+  momentum: 0.937
+  weight_decay: 0.0005
+  warmup_epochs: 3
+  optimizer: "SGD"
+  patience: 50
+  seed: 42
+  pretrained: true
+  device: "0"
+  workers: 8
+  save_dir: "runs/uav/yolov8"
+  project_name: "uav_yolov8"
+
+# ── 类别定义 ──────────────────────────────────────────────────────────────────
+classes:
+  nc: 1
+  names: ["gap"]
+
+# ── 评估参数 ──────────────────────────────────────────────────────────────────
+evaluate:
+  conf_thres: 0.25
+  iou_thres:  0.45

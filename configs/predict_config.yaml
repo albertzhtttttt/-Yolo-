@@ -1,0 +1,72 @@
+# =============================================================================
+# 大图预测配置文件
+# 路径：configs/predict_config.yaml
+# 用于 GeoTIFF 大图推理，支持输出 KML/SHP（方案A）或检测切片（方案B）
+# =============================================================================
+
+# ── 预测数据路径 ──────────────────────────────────────────────────────────────
+data:
+  predict_root: "data/predict"        # 预测 TIF 根目录
+  output_root:  "results/phase1_predict"  # 输出结果根目录
+
+  # 6个预测位置（TIF文件相对路径）
+  locations:
+    - name: "位置1"
+      tif: "data/predict/位置1/Level20/pos1_now.tif"
+      tfw: "data/predict/位置1/Level20/位置1_now.tfw"
+      prj: "data/predict/位置1/Level20/位置1_now.prj"
+    - name: "位置2_1"
+      tif: "data/predict/位置2_1/Level20/pos2_1.tif"
+      tfw: "data/predict/位置2_1/Level20/位置2_1.tfw"
+      prj: "data/predict/位置2_1/Level20/位置2_1.prj"
+    - name: "位置2_2"
+      tif: "data/predict/位置2_2/Level20/pos2_2.tif"
+      tfw: "data/predict/位置2_2/Level20/位置2_2.tfw"
+      prj: "data/predict/位置2_2/Level20/位置2_2.prj"
+    - name: "位置2_3"
+      tif: "data/predict/位置2_3/Level20/pos2_3.tif"
+      tfw: "data/predict/位置2_3/Level20/位置2_3.tfw"
+      prj: "data/predict/位置2_3/Level20/位置2_3.prj"
+    - name: "位置3_1"
+      tif: "data/predict/位置3_1/Level20/pos3_1.tif"
+      tfw: "data/predict/位置3_1/Level20/位置3_1.tfw"
+      prj: "data/predict/位置3_1/Level20/位置3_1.prj"
+    - name: "位置3_2"
+      tif: "data/predict/位置3_2/Level20/pos3_2.tif"
+      tfw: "data/predict/位置3_2/Level20/位置3_2.tfw"
+      prj: "data/predict/位置3_2/Level20/位置3_2.prj"
+
+# ── 切片参数 ──────────────────────────────────────────────────────────────────
+tiling:
+  tile_size: 640          # 切片尺寸
+  stride: 320             # 步长（50% 重叠）
+  pad_mode: "reflect"     # 边缘填充方式（reflect / constant）
+
+# ── 推理参数 ──────────────────────────────────────────────────────────────────
+inference:
+  conf_thres: 0.25        # 置信度阈值
+  iou_thres:  0.45        # NMS IoU 阈值（单张切片内去重）
+  global_iou_thres: 0.5   # 全图跨切片 NMS IoU 阈值
+  imgsz: 640
+  device: "0"             # GPU 编号
+  batch_size: 8           # 批量推理切片数（节省显存）
+
+# ── 输出格式 ──────────────────────────────────────────────────────────────────
+output:
+  mode: "auto"            # auto: 优先方案A（KML/SHP），失败自动回退方案B
+  # mode: "geo"           # 强制方案A：输出 KML + SHP
+  # mode: "tiles"         # 强制方案B：输出检测切片图像
+
+  # 方案A 地理输出
+  kml: true               # 生成 KML 文件
+  kmz: true               # 同时生成 KMZ（压缩 KML）
+  shp: true               # 生成 Shapefile
+
+  # 方案B 切片输出
+  save_annotated_tiles: true   # 保存带预测框的切片图像
+  save_empty_tiles: false      # 不保存无检测结果的切片
+
+  # 通用
+  save_summary: true      # 保存检测统计 summary.txt
+  vis_color: [0, 255, 0]  # 预测框颜色（BGR）
+  font_scale: 0.6
