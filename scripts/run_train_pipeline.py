@@ -20,6 +20,8 @@ run_train_pipeline.py - P2 训练全流程一键脚本
         --weights runs/satellite/yolov8/satellite_yolov8/weights/best.pt
 """
 
+from __future__ import annotations
+
 import argparse
 import os
 import subprocess
