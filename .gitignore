@@ -1,2 +1,7 @@
 data/predict/
 !data/predict/.gitkeep
+
+# Training outputs
+runs/
+logs/
+data/**/*.cache

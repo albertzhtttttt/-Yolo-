@@ -13,7 +13,7 @@
 | `configs/satellite_config.yaml` | 卫星数据集所有参数（路径/预处理/增强/训练/评估） |
 | `configs/uav_config.yaml` | 无人机数据集所有参数 |
 | `configs/predict_config.yaml` | 大图预测参数（6个TIF位置、切片参数、输出格式） |
-| `src/utils/plot_utils.py` | 中文字体自动检测、统一图表风格、PR曲线/混淆矩阵绘图函数 |
+| `src/utils/plot_utils.py` | 统一图表风格（所有标签使用英文）、PR曲线/混淆矩阵绘图函数，DPI≥300 |
 | `src/utils/logger.py` | 统一日志（同时输出控制台+文件，带时间戳） |
 
 ### P1：数据准备
@@ -53,7 +53,7 @@ python scripts/run_data_pipeline.py --dataset all --vis
 
 | 文件 | 说明 |
 |------|------|
-| `src/evaluate/evaluate.py` | 完整评估脚本：test 集指标（P/R/mAP/F1）、训练曲线、混淆矩阵、PR 曲线、F1-Confidence 曲线、测试集预测可视化（GT vs 预测框对比） |
+| `src/evaluate/evaluate.py` | 完整评估脚本：test 集指标（P/R/mAP/F1）、训练曲线、混淆矩阵、PR 曲线、F1-Confidence 曲线、测试集预测可视化（GT vs 预测框对比）；所有图表标签使用英文 |
 
 ### 一键入口
 

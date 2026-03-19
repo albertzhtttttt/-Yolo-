@@ -59,8 +59,8 @@
   - `configs/satellite_config.yaml`：卫星数据集超参数、路径
   - `configs/uav_config.yaml`：无人机数据集超参数、路径
   - `configs/predict_config.yaml`：大图预测参数（置信度阈值、NMS等）
-- [ ] **P0.4** 编写 matplotlib 中文字体工具模块 `src/utils/plot_utils.py`
-  - 统一图表风格，支持中文标题，DPI≥300
+- [ ] **P0.4** 编写 matplotlib 图表工具模块 `src/utils/plot_utils.py`
+  - 统一图表风格，所有图表标签使用英文（不含中文），DPI≥300
 - [ ] **P0.5** 编写日志工具模块 `src/utils/logger.py`
   - 统一日志格式，同时输出到控制台和文件
 
@@ -290,7 +290,7 @@
 > 前置条件：P3/P4/P5/P6 全部完成。
 
 - [ ] **P7.1** 汇总所有阶段结果，整理关键指标对比表
-- [ ] **P7.2** 检查所有可视化图表（风格统一、中文正常显示、DPI≥300）
+- [ ] **P7.2** 检查所有可视化图表（风格统一、所有标签使用英文、DPI≥300）
 - [ ] **P7.3** 更新 `README.md`，补充项目运行说明
 - [ ] **P7.4** 归档最优模型权重文件到 `runs/best_weights/`
 

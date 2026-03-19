@@ -16,6 +16,7 @@ from __future__ import annotations
 import os
 import platform
 import matplotlib
+matplotlib.use("Agg")  # 无头服务器必须在 import pyplot 前设置
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 import numpy as np
@@ -252,8 +253,8 @@ def draw_confusion_matrix(
     ax.set_yticks(range(len(class_names)))
     ax.set_xticklabels(class_names, rotation=45, ha="right")
     ax.set_yticklabels(class_names)
-    ax.set_xlabel("预测类别")
-    ax.set_ylabel("真实类别")
+    ax.set_xlabel("Predicted")
+    ax.set_ylabel("Ground Truth")
     ax.set_title(title)
 
     # 在格子内写数值
@@ -277,7 +278,7 @@ def draw_pr_curve(
     labels: list[str],
     ap_values: list[float] | None = None,
     ax: plt.Axes | None = None,
-    title: str = "Precision-Recall 曲线",
+    title: str = "Precision-Recall Curve",
 ) -> plt.Axes:
     """
     绘制 PR 曲线（支持多条曲线对比）。
@@ -317,7 +318,7 @@ def draw_loss_curve(
     epochs: list[int],
     losses: dict[str, list[float]],
     ax: plt.Axes | None = None,
-    title: str = "训练 Loss 曲线",
+    title: str = "Training Loss Curve",
 ) -> plt.Axes:
     """
     绘制训练 Loss 曲线（支持多个 loss 分量）。

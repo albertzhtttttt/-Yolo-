@@ -40,6 +40,9 @@ import cv2
 import numpy as np
 import yaml
 
+import matplotlib
+matplotlib.use("Agg")  # 无头服务器必须在 import pyplot 前设置
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -93,16 +96,16 @@ def plot_training_curves(results_csv: str, out_dir: str) -> None:
 
     setup_plot_style()
     fig, axes = plt.subplots(2, 3, figsize=(18, 10))
-    fig.suptitle("训练过程曲线", fontsize=15, fontweight="bold")
+    fig.suptitle("Training Curves", fontsize=15, fontweight="bold")
 
     # ── 列名映射（Ultralytics 8.x 格式）──────────────────────────────────────
     col_map = {
-        "train/box_loss":  ("训练 Box Loss",   PALETTE["blue"],   axes[0][0]),
-        "train/cls_loss":  ("训练 Cls Loss",   PALETTE["orange"], axes[0][1]),
-        "train/dfl_loss":  ("训练 DFL Loss",   PALETTE["green"],  axes[0][2]),
+        "train/box_loss":  ("Train Box Loss",   PALETTE["blue"],   axes[0][0]),
+        "train/cls_loss":  ("Train Cls Loss",   PALETTE["orange"], axes[0][1]),
+        "train/dfl_loss":  ("Train DFL Loss",   PALETTE["green"],  axes[0][2]),
         "metrics/mAP50(B)":    ("mAP@0.5",        PALETTE["blue"],   axes[1][0]),
         "metrics/mAP50-95(B)": ("mAP@0.5:0.95",   PALETTE["orange"], axes[1][1]),
-        "val/box_loss":    ("验证 Box Loss",   PALETTE["red"],    axes[1][2]),
+        "val/box_loss":    ("Val Box Loss",   PALETTE["red"],    axes[1][2]),
     }
 
     for col, (title, color, ax) in col_map.items():
@@ -113,12 +116,12 @@ def plot_training_curves(results_csv: str, out_dir: str) -> None:
                 best_idx = df[col].idxmax()
                 ax.scatter(epochs[best_idx], df[col][best_idx],
                            color="red", s=60, zorder=5,
-                           label=f"最优={df[col][best_idx]:.4f} (epoch {epochs[best_idx]+1})")
+                           label=f"Best={df[col][best_idx]:.4f} (epoch {epochs[best_idx]+1})")
                 ax.legend(fontsize=9)
             ax.set_xlabel("Epoch")
             ax.set_title(title)
         else:
-            ax.set_title(f"{title}（数据不可用）")
+            ax.set_title(f"{title} (N/A)")
             ax.text(0.5, 0.5, "N/A", ha="center", va="center",
                     transform=ax.transAxes, fontsize=14, color="gray")
 
@@ -250,13 +253,13 @@ def plot_confusion_matrix_from_val(model, dataset_yaml: str, conf: float,
         # 用统一风格重新绘制
         fig, ax = plt.subplots(figsize=(6, 5))
         # 添加背景类（Ultralytics 混淆矩阵含 background 行/列）
-        display_names = class_names + ["背景"]
+        display_names = class_names + ["Background"]
         if cm.shape[0] == len(display_names):
             draw_confusion_matrix(cm, display_names, ax=ax, normalize=True,
-                                  title="混淆矩阵（归一化）")
+                                  title="Confusion Matrix (Normalized)")
         else:
             draw_confusion_matrix(cm, class_names, ax=ax, normalize=True,
-                                  title="混淆矩阵（归一化）")
+                                  title="Confusion Matrix (Normalized)")
         plt.tight_layout()
         save_fig(fig, os.path.join(out_dir, "confusion_matrix.png"))
         plt.close(fig)
@@ -320,7 +323,7 @@ def plot_pr_f1_curves(model, dataset_yaml: str, conf_range: np.ndarray,
         labels=[class_names[0] if class_names else "gap"],
         ap_values=[ap],
         ax=ax,
-        title="Precision-Recall 曲线",
+        title="Precision-Recall Curve",
     )
     plt.tight_layout()
     save_fig(fig, os.path.join(out_dir, "pr_curve.png"))
@@ -332,11 +335,11 @@ def plot_pr_f1_curves(model, dataset_yaml: str, conf_range: np.ndarray,
     best_idx = int(np.argmax(f1_scores))
     ax.scatter(conf_range[best_idx], f1_scores[best_idx],
                color="red", s=80, zorder=5,
-               label=f"最优 F1={f1_scores[best_idx]:.4f} @ conf={conf_range[best_idx]:.2f}")
+               label=f"Best F1={f1_scores[best_idx]:.4f} @ conf={conf_range[best_idx]:.2f}")
     ax.axvline(conf_range[best_idx], color="red", linestyle="--", alpha=0.5)
-    ax.set_xlabel("置信度阈值")
+    ax.set_xlabel("Confidence Threshold")
     ax.set_ylabel("F1 Score")
-    ax.set_title("F1-Confidence 曲线")
+    ax.set_title("F1-Confidence Curve")
     ax.set_xlim([0, 1])
     ax.set_ylim([0, 1.05])
     ax.legend()
@@ -448,7 +451,7 @@ def visualize_predictions(
         # 图例
         legend_elements = [
             mpatches.Patch(edgecolor="red",    facecolor="none", linestyle="--", label=f"GT ({len(gt_boxes)})"),
-            mpatches.Patch(edgecolor="#00E676", facecolor="none", label=f"预测 ({len(pred_boxes)})"),
+            mpatches.Patch(edgecolor="#00E676", facecolor="none", label=f"Pred ({len(pred_boxes)})"),
         ]
         ax.legend(handles=legend_elements, loc="upper right", fontsize=9)
         ax.set_title(f"{img_name}", fontsize=10)

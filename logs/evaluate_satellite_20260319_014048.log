@@ -1,6 +1,0 @@
-2026-03-19 01:40:48 | INFO     | evaluate_satellite | 日志文件：/home6/zht/-Yolo-/logs/evaluate_satellite_20260319_014048.log
-2026-03-19 01:40:48 | INFO     | evaluate_satellite | ============================================================
-2026-03-19 01:40:48 | INFO     | evaluate_satellite | 模型评估启动：SATELLITE
-2026-03-19 01:40:48 | INFO     | evaluate_satellite | 权重文件：/home6/zht/-Yolo-/runs/satellite/yolov8/satellite_yolov82/weights/best.pt
-2026-03-19 01:40:50 | INFO     | evaluate_satellite | 自动找到 results.csv：/home6/zht/-Yolo-/runs/satellite/yolov8/satellite_yolov82/results.csv
-2026-03-19 01:41:06 | INFO     | evaluate_satellite | 在 test 集上评估（conf=0.25, iou=0.45）...

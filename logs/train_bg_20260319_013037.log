@@ -1,226 +1,0 @@
-2026-03-19 01:30:37 | INFO     | run_train_pipeline | 日志文件：/home6/zht/-Yolo-/logs/run_train_pipeline_20260319_013037.log
-2026-03-19 01:30:37 | INFO     | run_train_pipeline | ============================================================
-2026-03-19 01:30:37 | INFO     | run_train_pipeline | P2 训练流程启动
-2026-03-19 01:30:37 | INFO     | run_train_pipeline | ============================================================
-2026-03-19 01:30:37 | INFO     | run_train_pipeline | ============================================================
-2026-03-19 01:30:37 | INFO     | run_train_pipeline | 开始训练流程：SATELLITE
-2026-03-19 01:30:37 | INFO     | run_train_pipeline | ============================================================
-2026-03-19 01:30:37 | INFO     | run_train_pipeline | ▶ [satellite] Step 1: YOLOv8 训练
-2026-03-19 01:30:37 | INFO     | run_train_pipeline |   命令：/home6/lfy/anaconda3/envs/forest_gap/bin/python src/train/train_yolov8.py --dataset satellite
-2026-03-19 01:30:37 | INFO     | train_yolov8_satellite | 日志文件：/home6/zht/-Yolo-/logs/train_yolov8_satellite_20260319_013037.log
-2026-03-19 01:30:37 | INFO     | train_yolov8_satellite | ============================================================
-2026-03-19 01:30:37 | INFO     | train_yolov8_satellite | YOLOv8 训练启动：SATELLITE
-2026-03-19 01:30:37 | INFO     | train_yolov8_satellite | 配置文件：configs/satellite_config.yaml
-2026-03-19 01:30:37 | INFO     | train_yolov8_satellite | 模型规格：yolov8n
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite | 训练参数：
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   data                 = data/yolo_dataset_satellite/dataset.yaml
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   imgsz                = 640
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   epochs               = 150
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   batch                = 16
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   lr0                  = 0.01
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   lrf                  = 0.01
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   momentum             = 0.937
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   weight_decay         = 0.0005
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   warmup_epochs        = 3
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   optimizer            = SGD
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   patience             = 50
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   seed                 = 42
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   device               = 0
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   workers              = 8
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   project              = runs/satellite/yolov8
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   name                 = satellite_yolov8
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   exist_ok             = False
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   verbose              = True
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   augment              = False
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   hsv_h                = 0.0
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   hsv_s                = 0.0
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   hsv_v                = 0.0
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   degrees              = 0.0
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   translate            = 0.0
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   scale                = 0.0
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   shear                = 0.0
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   perspective          = 0.0
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   flipud               = 0.0
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   fliplr               = 0.0
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   mosaic               = 0.0
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   mixup                = 0.0
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite |   copy_paste           = 0.0
-2026-03-19 01:30:40 | INFO     | train_yolov8_satellite | 迁移学习（COCO 预训练）：yolov8n.pt
-Downloading https://github.com/ultralytics/assets/releases/download/v8.2.0/yolov8n.pt to 'yolov8n.pt'...
-  0%|          | 0.00/6.25M [00:00<?, ?B/s]  2%|▏         | 128k/6.25M [00:00<00:25, 252kB/s]  4%|▍         | 256k/6.25M [00:00<00:14, 433kB/s]  8%|▊         | 512k/6.25M [00:00<00:07, 856kB/s] 10%|█         | 640k/6.25M [00:00<00:06, 931kB/s] 16%|█▌        | 1.00M/6.25M [00:01<00:03, 1.57MB/s] 20%|██        | 1.25M/6.25M [00:01<00:03, 1.58MB/s] 24%|██▍       | 1.50M/6.25M [00:01<00:04, 1.15MB/s] 32%|███▏      | 2.00M/6.25M [00:01<00:02, 1.58MB/s] 42%|████▏     | 2.62M/6.25M [00:01<00:01, 2.16MB/s] 46%|████▌     | 2.88M/6.25M [00:02<00:01, 1.99MB/s] 50%|█████     | 3.12M/6.25M [00:02<00:01, 1.86MB/s] 54%|█████▍    | 3.38M/6.25M [00:02<00:01, 1.64MB/s] 58%|█████▊    | 3.62M/6.25M [00:03<00:02, 964kB/s]  66%|██████▌   | 4.12M/6.25M [00:03<00:01, 1.37MB/s] 70%|███████   | 4.38M/6.25M [00:03<00:01, 1.21MB/s] 74%|███████▍  | 4.62M/6.25M [00:03<00:01, 1.03MB/s] 78%|███████▊  | 4.88M/6.25M [00:04<00:01, 912kB/s]  80%|████████  | 5.00M/6.25M [00:04<00:01, 871kB/s] 82%|████████▏ | 5.12M/6.25M [00:04<00:01, 826kB/s] 84%|████████▍ | 5.25M/6.25M [00:04<00:01, 831kB/s] 86%|████████▌ | 5.38M/6.25M [00:04<00:01, 842kB/s] 88%|████████▊ | 5.50M/6.25M [00:05<00:00, 846kB/s] 90%|█████████ | 5.62M/6.25M [00:05<00:00, 847kB/s] 92%|█████████▏| 5.75M/6.25M [00:05<00:00, 829kB/s] 94%|█████████▍| 5.88M/6.25M [00:05<00:00, 556kB/s] 96%|█████████▌| 6.00M/6.25M [00:06<00:00, 601kB/s]100%|██████████| 6.25M/6.25M [00:06<00:00, 753kB/s]100%|██████████| 6.25M/6.25M [00:06<00:00, 1.04MB/s]2026-03-19 01:30:49 | INFO     | train_yolov8_satellite | 开始训练...
-Ultralytics YOLOv8.2.87 🚀 Python-3.8.20 torch-2.4.1+cu121 CUDA:0 (Tesla P100-PCIE-16GB, 16276MiB)
-[34m[1mengine/trainer: [0mtask=detect, mode=train, model=yolov8n.pt, data=data/yolo_dataset_satellite/dataset.yaml, epochs=150, time=None, patience=50, batch=16, imgsz=640, save=True, save_period=-1, cache=False, device=0, workers=8, project=runs/satellite/yolov8, name=satellite_yolov8, exist_ok=False, pretrained=True, optimizer=SGD, verbose=True, seed=42, deterministic=True, single_cls=False, rect=False, cos_lr=False, close_mosaic=10, resume=False, amp=True, fraction=1.0, profile=False, freeze=None, multi_scale=False, overlap_mask=True, mask_ratio=4, dropout=0.0, val=True, split=val, save_json=False, save_hybrid=False, conf=None, iou=0.7, max_det=300, half=False, dnn=False, plots=True, source=None, vid_stride=1, stream_buffer=False, visualize=False, augment=False, agnostic_nms=False, classes=None, retina_masks=False, embed=None, show=False, save_frames=False, save_txt=False, save_conf=False, save_crop=False, show_labels=True, show_conf=True, show_boxes=True, line_width=None, format=torchscript, keras=False, optimize=False, int8=False, dynamic=False, simplify=False, opset=None, workspace=4, nms=False, lr0=0.01, lrf=0.01, momentum=0.937, weight_decay=0.0005, warmup_epochs=3, warmup_momentum=0.8, warmup_bias_lr=0.1, box=7.5, cls=0.5, dfl=1.5, pose=12.0, kobj=1.0, label_smoothing=0.0, nbs=64, hsv_h=0.0, hsv_s=0.0, hsv_v=0.0, degrees=0.0, translate=0.0, scale=0.0, shear=0.0, perspective=0.0, flipud=0.0, fliplr=0.0, bgr=0.0, mosaic=0.0, mixup=0.0, copy_paste=0.0, auto_augment=randaugment, erasing=0.4, crop_fraction=1.0, cfg=None, tracker=botsort.yaml, save_dir=runs/satellite/yolov8/satellite_yolov8
-Overriding model.yaml nc=80 with nc=1
-
-                   from  n    params  module                                       arguments                     
-  0                  -1  1       464  ultralytics.nn.modules.conv.Conv             [3, 16, 3, 2]                 
-  1                  -1  1      4672  ultralytics.nn.modules.conv.Conv             [16, 32, 3, 2]                
-  2                  -1  1      7360  ultralytics.nn.modules.block.C2f             [32, 32, 1, True]             
-  3                  -1  1     18560  ultralytics.nn.modules.conv.Conv             [32, 64, 3, 2]                
-  4                  -1  2     49664  ultralytics.nn.modules.block.C2f             [64, 64, 2, True]             
-  5                  -1  1     73984  ultralytics.nn.modules.conv.Conv             [64, 128, 3, 2]               
-  6                  -1  2    197632  ultralytics.nn.modules.block.C2f             [128, 128, 2, True]           
-  7                  -1  1    295424  ultralytics.nn.modules.conv.Conv             [128, 256, 3, 2]              
-  8                  -1  1    460288  ultralytics.nn.modules.block.C2f             [256, 256, 1, True]           
-  9                  -1  1    164608  ultralytics.nn.modules.block.SPPF            [256, 256, 5]                 
- 10                  -1  1         0  torch.nn.modules.upsampling.Upsample         [None, 2, 'nearest']          
- 11             [-1, 6]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
- 12                  -1  1    148224  ultralytics.nn.modules.block.C2f             [384, 128, 1]                 
- 13                  -1  1         0  torch.nn.modules.upsampling.Upsample         [None, 2, 'nearest']          
- 14             [-1, 4]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
- 15                  -1  1     37248  ultralytics.nn.modules.block.C2f             [192, 64, 1]                  
- 16                  -1  1     36992  ultralytics.nn.modules.conv.Conv             [64, 64, 3, 2]                
- 17            [-1, 12]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
- 18                  -1  1    123648  ultralytics.nn.modules.block.C2f             [192, 128, 1]                 
- 19                  -1  1    147712  ultralytics.nn.modules.conv.Conv             [128, 128, 3, 2]              
- 20             [-1, 9]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
- 21                  -1  1    493056  ultralytics.nn.modules.block.C2f             [384, 256, 1]                 
- 22        [15, 18, 21]  1    751507  ultralytics.nn.modules.head.Detect           [1, [64, 128, 256]]           
-Model summary: 225 layers, 3,011,043 parameters, 3,011,027 gradients, 8.2 GFLOPs
-
-Transferred 319/355 items from pretrained weights
-
-Traceback (most recent call last):
-  File "src/train/train_yolov8.py", line 238, in <module>
-    main()
-  File "src/train/train_yolov8.py", line 193, in main
-    results = model.train(**train_args)
-  File "/home6/lfy/anaconda3/envs/forest_gap/lib/python3.8/site-packages/ultralytics/engine/model.py", line 815, in train
-    self.trainer.train()
-  File "/home6/lfy/anaconda3/envs/forest_gap/lib/python3.8/site-packages/ultralytics/engine/trainer.py", line 207, in train
-    self._do_train(world_size)
-  File "/home6/lfy/anaconda3/envs/forest_gap/lib/python3.8/site-packages/ultralytics/engine/trainer.py", line 327, in _do_train
-    self._setup_train(world_size)
-  File "/home6/lfy/anaconda3/envs/forest_gap/lib/python3.8/site-packages/ultralytics/engine/trainer.py", line 235, in _setup_train
-    self.model = self.model.to(self.device)
-  File "/home6/lfy/anaconda3/envs/forest_gap/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1174, in to
-    return self._apply(convert)
-  File "/home6/lfy/anaconda3/envs/forest_gap/lib/python3.8/site-packages/ultralytics/nn/tasks.py", line 252, in _apply
-    self = super()._apply(fn)
-  File "/home6/lfy/anaconda3/envs/forest_gap/lib/python3.8/site-packages/torch/nn/modules/module.py", line 780, in _apply
-    module._apply(fn)
-  File "/home6/lfy/anaconda3/envs/forest_gap/lib/python3.8/site-packages/torch/nn/modules/module.py", line 780, in _apply
-    module._apply(fn)
-  File "/home6/lfy/anaconda3/envs/forest_gap/lib/python3.8/site-packages/torch/nn/modules/module.py", line 780, in _apply
-    module._apply(fn)
-  File "/home6/lfy/anaconda3/envs/forest_gap/lib/python3.8/site-packages/torch/nn/modules/module.py", line 805, in _apply
-    param_applied = fn(param)
-  File "/home6/lfy/anaconda3/envs/forest_gap/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1160, in convert
-    return t.to(
-RuntimeError: CUDA error: out of memory
-CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
-For debugging consider passing CUDA_LAUNCH_BLOCKING=1
-Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
-
-2026-03-19 01:30:52 | ERROR    | run_train_pipeline | ✗ [satellite] Step 1: YOLOv8 训练 失败（返回码 1）
-2026-03-19 01:30:52 | ERROR    | run_train_pipeline | ❌ satellite 流程出错
-2026-03-19 01:30:52 | INFO     | run_train_pipeline | ============================================================
-2026-03-19 01:30:52 | INFO     | run_train_pipeline | 开始训练流程：UAV
-2026-03-19 01:30:52 | INFO     | run_train_pipeline | ============================================================
-2026-03-19 01:30:52 | INFO     | run_train_pipeline | ▶ [uav] Step 1: YOLOv8 训练
-2026-03-19 01:30:52 | INFO     | run_train_pipeline |   命令：/home6/lfy/anaconda3/envs/forest_gap/bin/python src/train/train_yolov8.py --dataset uav
-2026-03-19 01:30:52 | INFO     | train_yolov8_uav | 日志文件：/home6/zht/-Yolo-/logs/train_yolov8_uav_20260319_013052.log
-2026-03-19 01:30:52 | INFO     | train_yolov8_uav | ============================================================
-2026-03-19 01:30:52 | INFO     | train_yolov8_uav | YOLOv8 训练启动：UAV
-2026-03-19 01:30:52 | INFO     | train_yolov8_uav | 配置文件：configs/uav_config.yaml
-2026-03-19 01:30:52 | INFO     | train_yolov8_uav | 模型规格：yolov8n
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav | 训练参数：
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   data                 = data/yolo_dataset_uav/dataset.yaml
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   imgsz                = 640
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   epochs               = 150
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   batch                = 16
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   lr0                  = 0.01
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   lrf                  = 0.01
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   momentum             = 0.937
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   weight_decay         = 0.0005
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   warmup_epochs        = 3
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   optimizer            = SGD
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   patience             = 50
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   seed                 = 42
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   device               = 0
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   workers              = 8
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   project              = runs/uav/yolov8
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   name                 = uav_yolov8
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   exist_ok             = False
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   verbose              = True
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   augment              = False
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   hsv_h                = 0.0
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   hsv_s                = 0.0
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   hsv_v                = 0.0
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   degrees              = 0.0
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   translate            = 0.0
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   scale                = 0.0
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   shear                = 0.0
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   perspective          = 0.0
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   flipud               = 0.0
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   fliplr               = 0.0
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   mosaic               = 0.0
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   mixup                = 0.0
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav |   copy_paste           = 0.0
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav | 迁移学习（COCO 预训练）：yolov8n.pt
-2026-03-19 01:30:54 | INFO     | train_yolov8_uav | 开始训练...
-Ultralytics YOLOv8.2.87 🚀 Python-3.8.20 torch-2.4.1+cu121 CUDA:0 (Tesla P100-PCIE-16GB, 16276MiB)
-[34m[1mengine/trainer: [0mtask=detect, mode=train, model=yolov8n.pt, data=data/yolo_dataset_uav/dataset.yaml, epochs=150, time=None, patience=50, batch=16, imgsz=640, save=True, save_period=-1, cache=False, device=0, workers=8, project=runs/uav/yolov8, name=uav_yolov8, exist_ok=False, pretrained=True, optimizer=SGD, verbose=True, seed=42, deterministic=True, single_cls=False, rect=False, cos_lr=False, close_mosaic=10, resume=False, amp=True, fraction=1.0, profile=False, freeze=None, multi_scale=False, overlap_mask=True, mask_ratio=4, dropout=0.0, val=True, split=val, save_json=False, save_hybrid=False, conf=None, iou=0.7, max_det=300, half=False, dnn=False, plots=True, source=None, vid_stride=1, stream_buffer=False, visualize=False, augment=False, agnostic_nms=False, classes=None, retina_masks=False, embed=None, show=False, save_frames=False, save_txt=False, save_conf=False, save_crop=False, show_labels=True, show_conf=True, show_boxes=True, line_width=None, format=torchscript, keras=False, optimize=False, int8=False, dynamic=False, simplify=False, opset=None, workspace=4, nms=False, lr0=0.01, lrf=0.01, momentum=0.937, weight_decay=0.0005, warmup_epochs=3, warmup_momentum=0.8, warmup_bias_lr=0.1, box=7.5, cls=0.5, dfl=1.5, pose=12.0, kobj=1.0, label_smoothing=0.0, nbs=64, hsv_h=0.0, hsv_s=0.0, hsv_v=0.0, degrees=0.0, translate=0.0, scale=0.0, shear=0.0, perspective=0.0, flipud=0.0, fliplr=0.0, bgr=0.0, mosaic=0.0, mixup=0.0, copy_paste=0.0, auto_augment=randaugment, erasing=0.4, crop_fraction=1.0, cfg=None, tracker=botsort.yaml, save_dir=runs/uav/yolov8/uav_yolov8
-Overriding model.yaml nc=80 with nc=1
-
-                   from  n    params  module                                       arguments                     
-  0                  -1  1       464  ultralytics.nn.modules.conv.Conv             [3, 16, 3, 2]                 
-  1                  -1  1      4672  ultralytics.nn.modules.conv.Conv             [16, 32, 3, 2]                
-  2                  -1  1      7360  ultralytics.nn.modules.block.C2f             [32, 32, 1, True]             
-  3                  -1  1     18560  ultralytics.nn.modules.conv.Conv             [32, 64, 3, 2]                
-  4                  -1  2     49664  ultralytics.nn.modules.block.C2f             [64, 64, 2, True]             
-  5                  -1  1     73984  ultralytics.nn.modules.conv.Conv             [64, 128, 3, 2]               
-  6                  -1  2    197632  ultralytics.nn.modules.block.C2f             [128, 128, 2, True]           
-  7                  -1  1    295424  ultralytics.nn.modules.conv.Conv             [128, 256, 3, 2]              
-  8                  -1  1    460288  ultralytics.nn.modules.block.C2f             [256, 256, 1, True]           
-  9                  -1  1    164608  ultralytics.nn.modules.block.SPPF            [256, 256, 5]                 
- 10                  -1  1         0  torch.nn.modules.upsampling.Upsample         [None, 2, 'nearest']          
- 11             [-1, 6]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
- 12                  -1  1    148224  ultralytics.nn.modules.block.C2f             [384, 128, 1]                 
- 13                  -1  1         0  torch.nn.modules.upsampling.Upsample         [None, 2, 'nearest']          
- 14             [-1, 4]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
- 15                  -1  1     37248  ultralytics.nn.modules.block.C2f             [192, 64, 1]                  
- 16                  -1  1     36992  ultralytics.nn.modules.conv.Conv             [64, 64, 3, 2]                
- 17            [-1, 12]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
- 18                  -1  1    123648  ultralytics.nn.modules.block.C2f             [192, 128, 1]                 
- 19                  -1  1    147712  ultralytics.nn.modules.conv.Conv             [128, 128, 3, 2]              
- 20             [-1, 9]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
- 21                  -1  1    493056  ultralytics.nn.modules.block.C2f             [384, 256, 1]                 
- 22        [15, 18, 21]  1    751507  ultralytics.nn.modules.head.Detect           [1, [64, 128, 256]]           
-Model summary: 225 layers, 3,011,043 parameters, 3,011,027 gradients, 8.2 GFLOPs
-
-Transferred 319/355 items from pretrained weights
-Traceback (most recent call last):
-  File "src/train/train_yolov8.py", line 238, in <module>
-    main()
-  File "src/train/train_yolov8.py", line 193, in main
-    results = model.train(**train_args)
-  File "/home6/lfy/anaconda3/envs/forest_gap/lib/python3.8/site-packages/ultralytics/engine/model.py", line 815, in train
-    self.trainer.train()
-  File "/home6/lfy/anaconda3/envs/forest_gap/lib/python3.8/site-packages/ultralytics/engine/trainer.py", line 207, in train
-    self._do_train(world_size)
-  File "/home6/lfy/anaconda3/envs/forest_gap/lib/python3.8/site-packages/ultralytics/engine/trainer.py", line 327, in _do_train
-    self._setup_train(world_size)
-  File "/home6/lfy/anaconda3/envs/forest_gap/lib/python3.8/site-packages/ultralytics/engine/trainer.py", line 235, in _setup_train
-    self.model = self.model.to(self.device)
-  File "/home6/lfy/anaconda3/envs/forest_gap/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1174, in to
-    return self._apply(convert)
-  File "/home6/lfy/anaconda3/envs/forest_gap/lib/python3.8/site-packages/ultralytics/nn/tasks.py", line 252, in _apply
-    self = super()._apply(fn)
-  File "/home6/lfy/anaconda3/envs/forest_gap/lib/python3.8/site-packages/torch/nn/modules/module.py", line 780, in _apply
-    module._apply(fn)
-  File "/home6/lfy/anaconda3/envs/forest_gap/lib/python3.8/site-packages/torch/nn/modules/module.py", line 780, in _apply
-    module._apply(fn)
-  File "/home6/lfy/anaconda3/envs/forest_gap/lib/python3.8/site-packages/torch/nn/modules/module.py", line 780, in _apply
-    module._apply(fn)
-  File "/home6/lfy/anaconda3/envs/forest_gap/lib/python3.8/site-packages/torch/nn/modules/module.py", line 805, in _apply
-    param_applied = fn(param)
-  File "/home6/lfy/anaconda3/envs/forest_gap/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1160, in convert
-    return t.to(
-RuntimeError: CUDA error: out of memory
-CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
-For debugging consider passing CUDA_LAUNCH_BLOCKING=1
-Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
-
-2026-03-19 01:30:55 | ERROR    | run_train_pipeline | ✗ [uav] Step 1: YOLOv8 训练 失败（返回码 1）
-2026-03-19 01:30:55 | ERROR    | run_train_pipeline | ❌ uav 流程出错
