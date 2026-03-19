@@ -144,7 +144,7 @@ def plot_summary(results: list, dataset: str, output_root: str) -> None:
     """
     setup_plot_style()
 
-    names = [r["name"] for r in results]
+    names = [f"Site{i+1}" for i in range(len(results))]
     counts = [r["n_detections"] for r in results]
 
     fig, ax = plt.subplots(figsize=(10, 5))
