@@ -1,2 +1,9 @@
 data/predict/
 !data/predict/.gitkeep
+
+# 训练产物（权重文件较大，不入库）
+runs/
+logs/
+
+# 数据集缓存
+data/**/*.cache
