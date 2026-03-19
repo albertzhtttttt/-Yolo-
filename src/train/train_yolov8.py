@@ -77,6 +77,10 @@ def parse_args():
     parser.add_argument("--resume",  type=str, help="从指定权重文件断点续训")
     parser.add_argument("--no_pretrain", action="store_true",
                         help="不使用预训练权重（从头训练）")
+    parser.add_argument("--data",    type=str, default=None,
+                        help="覆盖 dataset yaml 路径（用于分辨率实验等场景）")
+    parser.add_argument("--save_dir", type=str, default=None,
+                        help="覆盖训练输出根目录")
 
     return parser.parse_args()
 
@@ -143,6 +147,8 @@ def build_train_args(cfg: dict, args) -> dict:
     if args.workers:  train_args["workers"]   = args.workers
     if args.patience: train_args["patience"]  = args.patience
     if args.name:     train_args["name"]      = args.name
+    if args.data:     train_args["data"]      = args.data
+    if args.save_dir: train_args["project"]   = args.save_dir
 
     return train_args
 
