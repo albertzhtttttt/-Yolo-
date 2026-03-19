@@ -43,6 +43,8 @@ def parse_args():
                         help="跳过数据集构建（已构建时使用）")
     parser.add_argument("--eval_only", action="store_true",
                         help="仅评估，不训练")
+    parser.add_argument("--device",   type=str, default=None,
+                        help="指定 GPU 编号（默认自动选择最空闲）")
     return parser.parse_args()
 
 
@@ -110,16 +112,16 @@ def run_resolution_experiment(dataset: str, scales: list, args, logger) -> dict:
         logger.info(f"步骤2：训练 {dataset} scale_{scale}（{model_name}, {epochs} epochs）")
 
         if not args.eval_only:
-            ret = run_cmd(
-                [sys.executable, "src/train/train_yolov8.py",
-                 "--dataset", dataset,
-                 "--model", model_name,
-                 "--epochs", str(epochs),
-                 "--data", dataset_yaml,
-                 "--name", exp_name,
-                 "--save_dir", save_dir],
-                logger, f"训练 scale_{scale}",
-            )
+            cmd = [sys.executable, "src/train/train_yolov8.py",
+                   "--dataset", dataset,
+                   "--model", model_name,
+                   "--epochs", str(epochs),
+                   "--data", dataset_yaml,
+                   "--name", exp_name,
+                   "--save_dir", save_dir]
+            if args.device:
+                cmd += ["--device", args.device]
+            ret = run_cmd(cmd, logger, f"训练 scale_{scale}")
             if ret != 0:
                 logger.error(f"scale_{scale} 训练失败，跳过评估")
                 continue
