@@ -64,7 +64,7 @@ train:
   seed: 42
   pretrained: true        # 使用 COCO 预训练权重
   device: "0"             # GPU 编号
-  workers: 8              # DataLoader 工作进程数
+  workers: 4              # DataLoader 工作进程数
   save_dir: "runs/satellite/yolov8"
   project_name: "satellite_yolov8"
 

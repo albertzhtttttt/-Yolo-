@@ -68,7 +68,7 @@ train:
   seed: 42
   pretrained: true
   device: "0"
-  workers: 8
+  workers: 4
   save_dir: "runs/uav/yolov8"
   project_name: "uav_yolov8"
 
