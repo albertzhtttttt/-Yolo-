@@ -220,7 +220,7 @@ def draw_confusion_matrix(
     ax: plt.Axes | None = None,
     normalize: bool = True,
     cmap: str = "Blues",
-    title: str = "混淆矩阵",
+    title: str = "Confusion Matrix",
 ) -> plt.Axes:
     """
     绘制混淆矩阵热力图。
