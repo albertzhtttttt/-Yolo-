@@ -1,0 +1,133 @@
+# 项目总结报告
+
+**项目名称：** 基于 YOLO 模型的高分辨率遥感影像红树林林窗探测
+**完成日期：** 2026-03-20
+**服务器：** lfy@172.31.226.112，GPU: Tesla P100 ×6
+
+---
+
+## 一、项目概述
+
+本项目针对红树林林窗（Forest Gap）目标，基于高分辨率遥感影像（卫星 + 无人机），构建了完整的目标检测与分析流程，涵盖数据准备、模型训练、大图预测、分辨率影响分析和多模型对比实验。
+
+---
+
+## 二、各阶段完成情况
+
+| 阶段 | 内容 | 状态 |
+|------|------|------|
+| P0 | 环境配置、目录结构、配置文件 | ✅ 完成 |
+| P1 | 数据预处理、增强、数据集构建 | ✅ 完成 |
+| P2 | YOLOv8 训练（satellite + UAV） | ✅ 完成 |
+| P3 | 评估可视化（指标/曲线/混淆矩阵） | ✅ 完成 |
+| P4 | GeoTIFF 大图预测（6个位置） | ✅ 完成 |
+| P5 | 分辨率影响分析（4个分辨率级别） | ✅ 完成 |
+| P6 | 多模型对比实验（YOLOv5/U-Net/FCN） | ✅ 完成 |
+
+---
+
+## 三、核心模型性能
+
+### YOLOv8 基准模型（P2/P3）
+
+| 数据集 | mAP@0.5 | Precision | Recall | F1 |
+|--------|---------|-----------|--------|----|
+| satellite | 0.778 | — | — | — |
+| uav | 0.950 | — | — | — |
+
+两个模型均通过 mAP@0.5 ≥ 0.70 关卡。
+
+---
+
+## 四、P4：大图预测结果
+
+使用滑动窗口（640×640，步长 320）对 6 个 TIF 位置进行推理，rasterio 窗口读取避免 OOM，全局 NMS 去重后输出 KML/KMZ/SHP。
+
+| 数据集 | 总检测框 |
+|--------|----------|
+| satellite | 20,057 |
+| uav | 36,273 |
+
+各位置检测框数量（satellite）：Site1=3006, Site2_1=1278, Site2_2=2987, Site2_3=3454, Site3_1=6069, Site3_2=3263
+
+各位置检测框数量（uav）：Site1=7022, Site2_1=2036, Site2_2=6864, Site2_3=9639, Site3_1=5245, Site3_2=5467
+
+---
+
+## 五、P5：分辨率影响分析
+
+对原始图像进行 100%/75%/50%/25% 下采样后缩放回 640×640，分别训练 YOLOv8n（150 epochs）。
+
+**主要发现：**
+- Satellite：100% 分辨率 mAP=0.667 最高，75% 下降明显（0.446），50% 有所回升（0.645），说明中等分辨率损失对卫星图像影响较大
+- UAV：各分辨率 mAP 均保持在 0.877 以上，对分辨率降低更鲁棒，50% 时甚至略高于 100%（0.957 vs 0.950）
+
+| 数据集 | 100% | 75% | 50% | 25% |
+|--------|------|-----|-----|-----|
+| satellite mAP@0.5 | 0.667 | 0.446 | 0.645 | 0.556 |
+| uav mAP@0.5 | 0.950 | 0.877 | 0.957 | 0.897 |
+
+---
+
+## 六、P6：多模型对比实验
+
+在相同测试集上对比 YOLOv8 / YOLOv5 / U-Net / FCN 四种模型。
+
+### Satellite
+
+| 模型 | mAP@0.5 | F1 | FPS | Params(M) |
+|------|---------|-----|-----|-----------|
+| YOLOv8 | **0.778** | 0.714 | 106 | — |
+| YOLOv5 | 0.630 | 0.613 | 86 | — |
+| U-Net  | — | 0.429 | 108 | 31.0 |
+| FCN    | — | 0.258 | 171 | 14.7 |
+
+### UAV
+
+| 模型 | mAP@0.5 | F1 | FPS | Params(M) |
+|------|---------|-----|-----|-----------|
+| YOLOv8 | 0.950 | 0.947 | 114 | — |
+| YOLOv5 | **0.986** | 0.986 | 104 | — |
+| U-Net  | — | 0.526 | 248 | 31.0 |
+| FCN    | — | 0.438 | 419 | 14.7 |
+
+**结论：**
+- 检测模型（YOLOv8/YOLOv5）在林窗检测任务上显著优于分割模型（U-Net/FCN）
+- YOLOv8 在卫星数据上表现最佳；YOLOv5 在 UAV 数据上略优
+- 分割模型 FPS 更高，但精度不足，不适合直接用于林窗检测
+- FCN 参数量最少（14.7M），推理速度最快（419 FPS），但检测精度最低
+
+---
+
+## 七、关键文件索引
+
+### 模型权重
+
+| 模型 | 路径 | mAP@0.5 |
+|------|------|---------|
+| YOLOv8 satellite | `runs/satellite/yolov8/satellite_yolov83/weights/best.pt` | 0.778 |
+| YOLOv8 uav | `runs/uav/yolov8/uav_yolov82/weights/best.pt` | 0.950 |
+| YOLOv5 satellite | `runs/satellite/yolov5/satellite_yolov5n/weights/best.pt` | 0.630 |
+| YOLOv5 uav | `runs/uav/yolov5/uav_yolov5n/weights/best.pt` | 0.986 |
+| U-Net satellite | `runs/satellite/unet/satellite_unet/best.pt` | — |
+| U-Net uav | `runs/uav/unet/uav_unet/best.pt` | — |
+| FCN satellite | `runs/satellite/fcn/satellite_fcn/best.pt` | — |
+| FCN uav | `runs/uav/fcn/uav_fcn/best.pt` | — |
+
+### 结果目录
+
+| 阶段 | 路径 |
+|------|------|
+| P3 评估结果 | `results/phase1_training/{satellite\|uav}/` |
+| P4 预测结果 | `results/phase1_predict/{satellite\|uav}/{位置名}/` |
+| P5 分辨率分析 | `results/phase2_resolution/` |
+| P6 对比实验 | `results/phase3_comparison/` |
+
+---
+
+## 八、技术要点
+
+1. **大图 OOM 问题**：使用 rasterio 窗口读取（windowed reading），避免将 28928×51200 像素图像全部加载入内存
+2. **并行训练**：P5/P6 充分利用服务器 6 块 Tesla P100，通过 `--device` 参数分配 GPU，最多同时运行 6 个训练任务
+3. **分割模型评估**：U-Net/FCN 输出二值掩码，通过连通域分析转为检测框后计算 P/R/F1，mAP 计算方式与检测模型不同，不可直接比较
+4. **图表英文化**：所有 matplotlib 图表标签均使用英文，避免服务器无中文字体导致的渲染问题

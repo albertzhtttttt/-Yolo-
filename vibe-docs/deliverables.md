@@ -196,3 +196,124 @@ results/phase3_comparison/
 3. **P6 最后**：对比实验依赖P4/P5结论，且训练量最大
 
 ---
+
+## 2026-03-19 | P4：GeoTIFF 大图预测（完成）
+
+### 交付文件
+
+| 文件 | 说明 |
+|------|------|
+| `src/predict/predict_geotiff.py` | 滑动窗口推理（640×640，步长320），rasterio 窗口读取避免 OOM，全局 NMS 去重，输出 KML/KMZ/SHP |
+| `scripts/run_predict.py` | 批量对6个TIF位置预测，生成各位置检测框统计图 |
+| `src/predict/__init__.py` | 模块初始化 |
+
+### 预测结果
+
+| 数据集 | 位置数 | 总检测框 | 输出格式 |
+|--------|--------|----------|----------|
+| satellite | 6 | 20,057 | KML / KMZ / SHP |
+| uav | 6 | 36,273 | KML / KMZ / SHP |
+
+各位置检测框数量（satellite）：Site1=3006, Site2_1=1278, Site2_2=2987, Site2_3=3454, Site3_1=6069, Site3_2=3263
+
+各位置检测框数量（uav）：Site1=7022, Site2_1=2036, Site2_2=6864, Site2_3=9639, Site3_1=5245, Site3_2=5467
+
+### 输出目录
+
+```
+results/phase1_predict/{satellite|uav}/{位置名}/
+├── detections.kml / detections.kmz
+├── detections.shp / detections.dbf / detections.shx
+└── summary_bar.png
+```
+
+---
+
+## 2026-03-19 | P5：分辨率影响分析（完成）
+
+### 交付文件
+
+| 文件 | 说明 |
+|------|------|
+| `src/data_preparation/build_resolution_datasets.py` | 构建100%/75%/50%/25%四个分辨率数据集 |
+| `scripts/run_resolution_pipeline.py` | 一键构建→训练→评估流水线，支持 `--device` 指定GPU |
+| `src/visualize/plot_resolution_analysis.py` | 分辨率影响折线图与柱状图 |
+
+### 实验结果
+
+**Satellite mAP@0.5 vs 分辨率：**
+
+| Scale | mAP@0.5 | Precision | Recall | F1 |
+|-------|---------|-----------|--------|----|
+| 100% | 0.667 | 1.000 | 0.439 | 0.610 |
+| 75%  | 0.446 | 0.746 | 0.333 | 0.461 |
+| 50%  | 0.645 | 0.800 | 0.444 | 0.571 |
+| 25%  | 0.556 | 0.750 | 0.333 | 0.462 |
+
+**UAV mAP@0.5 vs 分辨率：**
+
+| Scale | mAP@0.5 | Precision | Recall | F1 |
+|-------|---------|-----------|--------|----|
+| 100% | 0.950 | 1.000 | 0.900 | 0.947 |
+| 75%  | 0.877 | 0.945 | 0.775 | 0.852 |
+| 50%  | 0.957 | 0.949 | 0.925 | 0.937 |
+| 25%  | 0.897 | 0.982 | 0.800 | 0.882 |
+
+### 输出目录
+
+```
+results/phase2_resolution/
+├── metrics_by_scale.csv
+├── resolution_analysis.png
+└── resolution_map50_bar.png
+```
+
+---
+
+## 2026-03-20 | P6：对比实验（YOLOv5 / U-Net / FCN）（完成）
+
+### 交付文件
+
+| 文件 | 说明 |
+|------|------|
+| `src/data_preparation/yolo_to_mask.py` | YOLO bbox 转二值掩码，为分割模型生成标签 |
+| `src/train/train_yolov5.py` | YOLOv5n 训练，对齐超参数，150 epochs |
+| `src/train/train_unet.py` | U-Net（4层编解码），BCE+Dice Loss，100 epochs，batch=2 |
+| `src/train/train_fcn.py` | FCN-8s（VGG16 backbone），BCE+Dice Loss，100 epochs |
+| `src/evaluate/compare_models.py` | 统一评估：P/R/mAP/F1/FPS/Params |
+| `src/visualize/plot_comparison.py` | 对比柱状图、速度-精度散点图、雷达图 |
+
+### 对比结果
+
+**Satellite：**
+
+| 模型 | mAP@0.5 | Precision | Recall | F1 | FPS |
+|------|---------|-----------|--------|----|-----|
+| YOLOv8 | **0.778** | 1.000 | 0.556 | 0.714 | 106 |
+| YOLOv5 | 0.630 | 0.987 | 0.444 | 0.613 | 86 |
+| U-Net  | — | 0.600 | 0.333 | 0.429 | 108 |
+| FCN    | — | 0.182 | 0.444 | 0.258 | 171 |
+
+**UAV：**
+
+| 模型 | mAP@0.5 | Precision | Recall | F1 | FPS |
+|------|---------|-----------|--------|----|-----|
+| YOLOv8 | 0.950 | 1.000 | 0.900 | 0.947 | 114 |
+| YOLOv5 | **0.986** | 1.000 | 0.972 | 0.986 | 104 |
+| U-Net  | — | 0.357 | 1.000 | 0.526 | 248 |
+| FCN    | — | 0.283 | 0.975 | 0.438 | 419 |
+
+> 注：U-Net/FCN 为分割模型，mAP 通过 mask→bbox 后处理计算，与检测模型不可直接比较。
+
+### 输出目录
+
+```
+results/phase3_comparison/
+├── metrics_summary_satellite.csv
+├── metrics_summary_uav.csv
+├── comparison_bar.png
+├── speed_accuracy.png
+└── radar_chart.png
+```
+
+---

@@ -148,7 +148,8 @@ def run_resolution_experiment(dataset: str, scales: list, args, logger) -> dict:
             [sys.executable, "src/evaluate/evaluate.py",
              "--dataset", dataset,
              "--weights", str(weights_path),
-             "--config", config_path],
+             "--config", config_path,
+             "--output_dir", out_dir],
             logger, f"评估 scale_{scale}",
         )
 

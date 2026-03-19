@@ -65,6 +65,8 @@ def parse_args():
     parser.add_argument("--iou",      type=float, default=0.45, help="NMS IoU 阈值")
     parser.add_argument("--vis_n",    type=int,   default=20,   help="可视化预测结果的图像数量")
     parser.add_argument("--results_csv", type=str, help="训练 results.csv 路径（用于绘制训练曲线）")
+    parser.add_argument("--output_dir",  type=str, default=None,
+                        help="覆盖输出目录（默认 results/phase1_training/{dataset}）")
     return parser.parse_args()
 
 
@@ -481,7 +483,7 @@ def main():
     logger.info(f"权重文件：{args.weights}")
 
     # 输出目录
-    out_dir = os.path.join("results", "phase1_training", args.dataset)
+    out_dir = args.output_dir if args.output_dir else os.path.join("results", "phase1_training", args.dataset)
     os.makedirs(out_dir, exist_ok=True)
 
     # 导入 YOLO
