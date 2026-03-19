@@ -92,3 +92,107 @@ results/phase1_training/{satellite|uav}/
 ```
 
 ---
+
+## 2026-03-19 | 验收结果 & 下一步执行计划
+
+### P2/P3 验收结果（关卡已通过）
+
+| 数据集 | mAP@0.5 | Precision | Recall | F1 | 状态 |
+|--------|---------|-----------|--------|----|------|
+| satellite | 0.778 | — | — | — | ✓ 达标 |
+| uav | 0.950 | — | — | — | ✓ 达标 |
+
+两个模型均通过 mAP@0.5 ≥ 0.70 关卡，P3/P4/P5/P6 可同时推进。
+
+---
+
+## 下一步：P4 + P5 + P6 并行执行
+
+### P4：GeoTIFF 大图预测（最高优先级）
+
+| 文件 | 说明 |
+|------|------|
+| `src/predict/predict_geotiff.py` | 滑动窗口推理大图，Plan A：rasterio读取+坐标转换→KML/SHP；Plan B：切片JPEG收集 |
+| `scripts/run_predict.py` | 一键对6个TIF位置批量预测，支持 `--dataset satellite/uav/all` |
+
+#### 服务器运行命令
+
+```bash
+# 卫星模型预测全部6个位置
+python scripts/run_predict.py --dataset satellite \
+    --weights runs/satellite/yolov8/satellite_yolov8/weights/best.pt
+
+# 无人机模型预测全部6个位置
+python scripts/run_predict.py --dataset uav \
+    --weights runs/uav/yolov8/uav_yolov8/weights/best.pt
+```
+
+#### 输出目录
+
+```
+results/phase1_predict/{satellite|uav}/{位置名}/
+├── detections.kml        检测框（KML格式，Plan A）
+├── detections.shp        检测框（SHP格式，Plan A）
+├── summary.csv           各位置检测框数量统计
+└── tiles/                含检测结果的切片图（Plan B备用）
+```
+
+---
+
+### P5：分辨率影响分析
+
+| 文件 | 说明 |
+|------|------|
+| `src/data_preparation/build_resolution_datasets.py` | 对原始图像下采样至100%/75%/50%/25%后统一缩放回640×640 |
+| `scripts/run_resolution_pipeline.py` | 一键构建4个分辨率数据集并串行训练 |
+| `src/visualize/plot_resolution_analysis.py` | 各指标随分辨率变化折线图、检测结果对比拼图 |
+
+#### 服务器运行命令
+
+```bash
+# 构建多分辨率数据集并训练（GPU串行，耗时较长）
+bash scripts/run_resolution_pipeline.sh --dataset satellite
+bash scripts/run_resolution_pipeline.sh --dataset uav
+```
+
+#### 输出目录
+
+```
+results/phase2_resolution/
+├── metrics_by_scale.csv          各分辨率指标汇总
+├── resolution_analysis.png       指标随分辨率变化折线图
+└── detection_comparison.png      4分辨率检测结果横向对比
+```
+
+---
+
+### P6：对比实验（YOLOv5 / U-Net / FCN）
+
+| 文件 | 说明 |
+|------|------|
+| `src/data_preparation/yolo_to_mask.py` | YOLO框→二值掩码，为U-Net/FCN生成分割标签 |
+| `src/train/train_yolov5.py` | YOLOv5训练脚本，对齐超参数 |
+| `src/train/train_unet.py` | U-Net二值分割，BCE+Dice Loss，后处理提取检测框 |
+| `src/train/train_fcn.py` | FCN分割，同U-Net后处理策略 |
+| `src/evaluate/compare_models.py` | 统一评估：P/R/mAP/F1/FPS/Params/FLOPs |
+| `src/visualize/plot_comparison.py` | 对比柱状图、速度-精度散点图、雷达图 |
+
+#### 输出目录
+
+```
+results/phase3_comparison/
+├── metrics_summary.csv           所有模型指标汇总表
+├── comparison_bar.png            各模型指标对比柱状图
+├── speed_accuracy.png            速度 vs 精度散点图
+└── radar_chart.png               综合性能雷达图
+```
+
+---
+
+### 执行优先级建议
+
+1. **P4 优先**：验证实际预测价值，输出KML/SHP可直接用于论文
+2. **P5 并行**：分辨率实验耗时长，尽早启动
+3. **P6 最后**：对比实验依赖P4/P5结论，且训练量最大
+
+---
