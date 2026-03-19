@@ -1,0 +1,22 @@
+2026-03-19 01:15:48 | INFO     | run_data_pipeline | 日志文件：/home6/zht/-Yolo-/logs/run_data_pipeline_20260319_011548.log
+2026-03-19 01:15:48 | INFO     | run_data_pipeline | ============================================================
+2026-03-19 01:15:48 | INFO     | run_data_pipeline | P1 数据准备全流程启动
+2026-03-19 01:15:48 | INFO     | run_data_pipeline | dataset=all, vis=True, no_augment=False
+2026-03-19 01:15:48 | INFO     | run_data_pipeline | ============================================================
+2026-03-19 01:15:48 | INFO     | run_data_pipeline | ============================================================
+2026-03-19 01:15:48 | INFO     | run_data_pipeline | 开始处理数据集：SATELLITE
+2026-03-19 01:15:48 | INFO     | run_data_pipeline | ============================================================
+2026-03-19 01:15:48 | INFO     | run_data_pipeline | ▶ [satellite] Step 1: 图像预处理
+2026-03-19 01:15:48 | INFO     | run_data_pipeline |   命令：/home6/lfy/anaconda3/envs/forest_gap/bin/python src/data_preparation/preprocess_satellite.py --config configs/satellite_config.yaml --vis
+2026-03-19 01:15:49 | ERROR    | run_data_pipeline | ✗ [satellite] Step 1: 图像预处理 失败（返回码 1）
+2026-03-19 01:15:49 | ERROR    | run_data_pipeline | ❌ satellite 流程出错，请检查日志后重试
+2026-03-19 01:15:49 | INFO     | run_data_pipeline | ============================================================
+2026-03-19 01:15:49 | INFO     | run_data_pipeline | 开始处理数据集：UAV
+2026-03-19 01:15:49 | INFO     | run_data_pipeline | ============================================================
+2026-03-19 01:15:49 | INFO     | run_data_pipeline | ▶ [uav] Step 1: 图像预处理
+2026-03-19 01:15:49 | INFO     | run_data_pipeline |   命令：/home6/lfy/anaconda3/envs/forest_gap/bin/python src/data_preparation/preprocess_uav.py --config configs/uav_config.yaml --vis
+2026-03-19 01:15:52 | ERROR    | run_data_pipeline | ✗ [uav] Step 1: 图像预处理 失败（返回码 1）
+2026-03-19 01:15:52 | ERROR    | run_data_pipeline | ❌ uav 流程出错，请检查日志后重试
+2026-03-19 01:15:52 | ERROR    | run_data_pipeline | ============================================================
+2026-03-19 01:15:52 | ERROR    | run_data_pipeline | ❌ 部分流程失败，请修复后重新运行
+2026-03-19 01:15:52 | ERROR    | run_data_pipeline | ============================================================

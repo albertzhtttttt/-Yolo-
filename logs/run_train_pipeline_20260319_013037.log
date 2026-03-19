@@ -1,0 +1,18 @@
+2026-03-19 01:30:37 | INFO     | run_train_pipeline | 日志文件：/home6/zht/-Yolo-/logs/run_train_pipeline_20260319_013037.log
+2026-03-19 01:30:37 | INFO     | run_train_pipeline | ============================================================
+2026-03-19 01:30:37 | INFO     | run_train_pipeline | P2 训练流程启动
+2026-03-19 01:30:37 | INFO     | run_train_pipeline | ============================================================
+2026-03-19 01:30:37 | INFO     | run_train_pipeline | ============================================================
+2026-03-19 01:30:37 | INFO     | run_train_pipeline | 开始训练流程：SATELLITE
+2026-03-19 01:30:37 | INFO     | run_train_pipeline | ============================================================
+2026-03-19 01:30:37 | INFO     | run_train_pipeline | ▶ [satellite] Step 1: YOLOv8 训练
+2026-03-19 01:30:37 | INFO     | run_train_pipeline |   命令：/home6/lfy/anaconda3/envs/forest_gap/bin/python src/train/train_yolov8.py --dataset satellite
+2026-03-19 01:30:52 | ERROR    | run_train_pipeline | ✗ [satellite] Step 1: YOLOv8 训练 失败（返回码 1）
+2026-03-19 01:30:52 | ERROR    | run_train_pipeline | ❌ satellite 流程出错
+2026-03-19 01:30:52 | INFO     | run_train_pipeline | ============================================================
+2026-03-19 01:30:52 | INFO     | run_train_pipeline | 开始训练流程：UAV
+2026-03-19 01:30:52 | INFO     | run_train_pipeline | ============================================================
+2026-03-19 01:30:52 | INFO     | run_train_pipeline | ▶ [uav] Step 1: YOLOv8 训练
+2026-03-19 01:30:52 | INFO     | run_train_pipeline |   命令：/home6/lfy/anaconda3/envs/forest_gap/bin/python src/train/train_yolov8.py --dataset uav
+2026-03-19 01:30:55 | ERROR    | run_train_pipeline | ✗ [uav] Step 1: YOLOv8 训练 失败（返回码 1）
+2026-03-19 01:30:55 | ERROR    | run_train_pipeline | ❌ uav 流程出错
