@@ -1,0 +1,41 @@
+2026-03-19 02:18:21 | INFO     | train_yolov8_satellite | 日志文件：/home6/zht/-Yolo-/logs/train_yolov8_satellite_20260319_021821.log
+2026-03-19 02:18:21 | INFO     | train_yolov8_satellite | ============================================================
+2026-03-19 02:18:21 | INFO     | train_yolov8_satellite | YOLOv8 训练启动：SATELLITE
+2026-03-19 02:18:21 | INFO     | train_yolov8_satellite | 配置文件：configs/satellite_config.yaml
+2026-03-19 02:18:21 | INFO     | train_yolov8_satellite | 模型规格：yolov8s
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite | 自动选择 GPU：3（显存最空闲）
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite | 训练参数：
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   data                 = data/yolo_dataset_satellite/dataset.yaml
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   imgsz                = 640
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   epochs               = 200
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   batch                = 16
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   lr0                  = 0.01
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   lrf                  = 0.01
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   momentum             = 0.937
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   weight_decay         = 0.0005
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   warmup_epochs        = 3
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   optimizer            = SGD
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   patience             = 50
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   seed                 = 42
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   device               = 3
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   workers              = 8
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   project              = runs/satellite/yolov8
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   name                 = satellite_yolov8
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   exist_ok             = False
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   verbose              = True
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   augment              = False
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   hsv_h                = 0.0
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   hsv_s                = 0.0
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   hsv_v                = 0.0
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   degrees              = 0.0
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   translate            = 0.0
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   scale                = 0.0
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   shear                = 0.0
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   perspective          = 0.0
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   flipud               = 0.0
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   fliplr               = 0.0
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   mosaic               = 0.0
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   mixup                = 0.0
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite |   copy_paste           = 0.0
+2026-03-19 02:18:24 | INFO     | train_yolov8_satellite | 迁移学习（COCO 预训练）：yolov8s.pt
+2026-03-19 02:20:36 | INFO     | train_yolov8_satellite | 开始训练...
