@@ -29,7 +29,7 @@ echo "日志文件：$LOG_FILE"
 echo "追踪命令：tail -f $LOG_FILE"
 echo ""
 
-nohup python "$PROJECT_ROOT/scripts/run_train_pipeline.py" "$@" \
+nohup /home6/lfy/anaconda3/envs/forest_gap/bin/python "$PROJECT_ROOT/scripts/run_train_pipeline.py" "$@" \
     > "$LOG_FILE" 2>&1 &
 
 PID=$!
