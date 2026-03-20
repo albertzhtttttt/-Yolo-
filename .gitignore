@@ -12,9 +12,6 @@ data/resolution_datasets_*/
 # Segmentation masks (generated from labels)
 data/yolo_dataset_*/masks/
 
-# Prediction results (large outputs)
-results/
-
 # Python cache
 __pycache__/
 *.pyc

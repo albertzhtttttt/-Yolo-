@@ -139,7 +139,10 @@ def compute_detection_metrics(
         cum_fp = np.cumsum(1 - tp_flags)
         prec = cum_tp / (cum_tp + cum_fp + 1e-8)
         rec  = cum_tp / (total_gt + 1e-8)
-        ap = float(np.trapz(prec[::-1], rec[::-1]))
+
+        # rec 随阈值降低应单调不减，直接按当前顺序积分。
+        # 如果把 prec/rec 反转后再积分，会因为 x 轴递减而得到负面积。
+        ap = max(0.0, float(np.trapz(prec, rec)))
     else:
         ap = 0.0
 
