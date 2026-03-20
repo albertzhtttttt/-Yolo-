@@ -63,17 +63,17 @@ bash scripts/train_bg.sh --dataset all
 
 # 仅评估
 python src/evaluate/evaluate.py --dataset satellite \
-    --weights runs/satellite/yolov8/satellite_yolov83/weights/best.pt
+    --weights runs/satellite/yolov8/satellite_yolov8/weights/best.pt
 ```
 
 ### P4：大图预测（6个TIF位置）
 
 ```bash
 python scripts/run_predict.py --dataset satellite \
-    --weights runs/satellite/yolov8/satellite_yolov83/weights/best.pt
+    --weights runs/satellite/yolov8/satellite_yolov8/weights/best.pt
 
 python scripts/run_predict.py --dataset uav \
-    --weights runs/uav/yolov8/uav_yolov82/weights/best.pt
+    --weights runs/uav/yolov8/uav_yolov8/weights/best.pt
 ```
 
 输出：`results/phase1_predict/{satellite|uav}/{位置名}/detections.kml/.shp`
@@ -99,7 +99,7 @@ python src/train/train_fcn.py    --dataset satellite --device 2
 
 # 对比评估
 python src/evaluate/compare_models.py --dataset satellite \
-    --yolov8_weights runs/satellite/yolov8/satellite_yolov83/weights/best.pt \
+    --yolov8_weights runs/satellite/yolov8/satellite_yolov8/weights/best.pt \
     --yolov5_weights runs/satellite/yolov5/satellite_yolov5n/weights/best.pt \
     --unet_weights   runs/satellite/unet/satellite_unet/best.pt \
     --fcn_weights    runs/satellite/fcn/satellite_fcn/best.pt
@@ -113,15 +113,15 @@ python src/evaluate/compare_models.py --dataset satellite \
 
 | 数据集 | mAP@0.5 | Precision | Recall | F1 | 状态 |
 |--------|---------|-----------|--------|----|------|
-| satellite | 0.778 | 1.000 | 0.556 | 0.714 | ✓ 达标 |
-| uav | 0.950 | 1.000 | 0.900 | 0.947 | ✓ 达标 |
+| satellite | 0.418 | 0.920 | 0.222 | 0.358 | 需改进 |
+| uav | 0.974 | 0.974 | 0.950 | 0.962 | ✓ 达标 |
 
 ### P4：大图预测检测框统计
 
 | 数据集 | Site1 | Site2_1 | Site2_2 | Site2_3 | Site3_1 | Site3_2 | 合计 |
 |--------|-------|---------|---------|---------|---------|---------|------|
-| satellite | 3006 | 1278 | 2987 | 3454 | 6069 | 3263 | **20,057** |
-| uav | 7022 | 2036 | 6864 | 9639 | 5245 | 5467 | **36,273** |
+| satellite | 2704 | 1409 | 4046 | 3941 | 7785 | 3827 | **23,712** |
+| uav | 13036 | 3407 | 7721 | 9594 | 7616 | 5822 | **47,196** |
 
 ### P5：分辨率影响分析（mAP@0.5）
 
@@ -136,21 +136,21 @@ python src/evaluate/compare_models.py --dataset satellite \
 
 | 模型 | mAP@0.5 | Precision | Recall | F1 | FPS |
 |------|---------|-----------|--------|----|-----|
-| YOLOv8 | **0.778** | 1.000 | 0.556 | 0.714 | 106 |
-| YOLOv5 | 0.630 | 0.987 | 0.444 | 0.613 | 86 |
-| U-Net | — | 0.600 | 0.333 | 0.429 | 108 |
-| FCN | — | 0.182 | 0.444 | 0.258 | 171 |
+| YOLOv8 | 0.418 | 0.920 | 0.222 | 0.358 | 106.2 |
+| YOLOv5 | **0.630** | 0.987 | 0.444 | 0.613 | 107.0 |
+| U-Net | 0.196 | 0.667 | 0.444 | 0.533 | 119.5 |
+| FCN | 0.064 | 0.333 | 0.333 | 0.333 | 186.7 |
 
 **UAV**
 
 | 模型 | mAP@0.5 | Precision | Recall | F1 | FPS |
 |------|---------|-----------|--------|----|-----|
-| YOLOv8 | 0.950 | 1.000 | 0.900 | 0.947 | 114 |
-| YOLOv5 | **0.986** | 1.000 | 0.972 | 0.986 | 104 |
-| U-Net | — | 0.357 | 1.000 | 0.526 | 248 |
-| FCN | — | 0.283 | 0.975 | 0.438 | 419 |
+| YOLOv8 | 0.974 | 0.974 | 0.950 | 0.962 | 112.9 |
+| YOLOv5 | **0.986** | 1.000 | 0.972 | 0.986 | 87.4 |
+| U-Net | 0.210 | 0.274 | 1.000 | 0.430 | 155.1 |
+| FCN | 0.267 | 0.333 | 0.975 | 0.497 | 337.6 |
 
-> U-Net/FCN 为分割模型，mAP 通过 mask→bbox 后处理计算，与检测模型不可直接比较。
+> U-Net/FCN 为分割模型，mAP 通过 mask→bbox 后处理近似计算，仅可作为同一后处理流程下的参考值，不宜与检测模型直接等价比较。
 
 ---
 
@@ -158,11 +158,11 @@ python src/evaluate/compare_models.py --dataset satellite \
 
 | 模型 | 路径 | mAP@0.5 |
 |------|------|---------|
-| YOLOv8 satellite | `runs/satellite/yolov8/satellite_yolov83/weights/best.pt` | 0.778 |
-| YOLOv8 uav | `runs/uav/yolov8/uav_yolov82/weights/best.pt` | 0.950 |
+| YOLOv8 satellite | `runs/satellite/yolov8/satellite_yolov8/weights/best.pt` | 0.418 |
+| YOLOv8 uav | `runs/uav/yolov8/uav_yolov8/weights/best.pt` | 0.974 |
 | YOLOv5 satellite | `runs/satellite/yolov5/satellite_yolov5n/weights/best.pt` | 0.630 |
 | YOLOv5 uav | `runs/uav/yolov5/uav_yolov5n/weights/best.pt` | 0.986 |
-| U-Net satellite | `runs/satellite/unet/satellite_unet/best.pt` | — |
-| U-Net uav | `runs/uav/unet/uav_unet/best.pt` | — |
-| FCN satellite | `runs/satellite/fcn/satellite_fcn/best.pt` | — |
-| FCN uav | `runs/uav/fcn/uav_fcn/best.pt` | — |
+| U-Net satellite | `runs/satellite/unet/satellite_unet/best.pt` | 0.196 |
+| U-Net uav | `runs/uav/unet/uav_unet/best.pt` | 0.210 |
+| FCN satellite | `runs/satellite/fcn/satellite_fcn/best.pt` | 0.064 |
+| FCN uav | `runs/uav/fcn/uav_fcn/best.pt` | 0.267 |

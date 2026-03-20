@@ -95,14 +95,14 @@ results/phase1_training/{satellite|uav}/
 
 ## 2026-03-19 | 验收结果 & 下一步执行计划
 
-### P2/P3 验收结果（关卡已通过）
+### P2/P3 最新评估结果
 
 | 数据集 | mAP@0.5 | Precision | Recall | F1 | 状态 |
 |--------|---------|-----------|--------|----|------|
-| satellite | 0.778 | — | — | — | ✓ 达标 |
-| uav | 0.950 | — | — | — | ✓ 达标 |
+| satellite | 0.418 | 0.920 | 0.222 | 0.358 | 需改进 |
+| uav | 0.974 | 0.974 | 0.950 | 0.962 | ✓ 达标 |
 
-两个模型均通过 mAP@0.5 ≥ 0.70 关卡，P3/P4/P5/P6 可同时推进。
+当前仅 UAV 数据集通过 mAP@0.5 ≥ 0.70 关卡；satellite 结果低于早期文档记录，后续总结需以最新评估输出为准。
 
 ---
 
@@ -181,7 +181,8 @@ results/phase2_resolution/
 
 ```
 results/phase3_comparison/
-├── metrics_summary.csv           所有模型指标汇总表
+├── metrics_summary_satellite.csv 卫星数据集模型指标汇总表
+├── metrics_summary_uav.csv       无人机数据集模型指标汇总表
 ├── comparison_bar.png            各模型指标对比柱状图
 ├── speed_accuracy.png            速度 vs 精度散点图
 └── radar_chart.png               综合性能雷达图
@@ -211,12 +212,12 @@ results/phase3_comparison/
 
 | 数据集 | 位置数 | 总检测框 | 输出格式 |
 |--------|--------|----------|----------|
-| satellite | 6 | 20,057 | KML / KMZ / SHP |
-| uav | 6 | 36,273 | KML / KMZ / SHP |
+| satellite | 6 | 23,712 | KML / KMZ / SHP |
+| uav | 6 | 47,196 | KML / KMZ / SHP |
 
-各位置检测框数量（satellite）：Site1=3006, Site2_1=1278, Site2_2=2987, Site2_3=3454, Site3_1=6069, Site3_2=3263
+各位置检测框数量（satellite）：Site1=2704, Site2_1=1409, Site2_2=4046, Site2_3=3941, Site3_1=7785, Site3_2=3827
 
-各位置检测框数量（uav）：Site1=7022, Site2_1=2036, Site2_2=6864, Site2_3=9639, Site3_1=5245, Site3_2=5467
+各位置检测框数量（uav）：Site1=13036, Site2_1=3407, Site2_2=7721, Site2_3=9594, Site3_1=7616, Site3_2=5822
 
 ### 输出目录
 
@@ -259,14 +260,20 @@ results/phase1_predict/{satellite|uav}/{位置名}/
 | 50%  | 0.957 | 0.949 | 0.925 | 0.937 |
 | 25%  | 0.897 | 0.982 | 0.800 | 0.882 |
 
+> 注：上述 satellite 指标来自 `results/phase2_resolution/satellite/scale_*/metrics.csv`；当前根目录 `results/phase2_resolution/metrics_by_scale.csv` 仅包含 UAV 汇总行。
+
 ### 输出目录
 
 ```
 results/phase2_resolution/
 ├── metrics_by_scale.csv
+├── satellite/scale_{100,75,50,25}/metrics.csv
+├── uav/scale_{100,75,50,25}/metrics.csv
 ├── resolution_analysis.png
 └── resolution_map50_bar.png
 ```
+
+> 注：当前根目录 `metrics_by_scale.csv` 仅汇总了 UAV 结果；satellite 指标需结合 `satellite/scale_*/metrics.csv` 查看。
 
 ---
 
@@ -289,21 +296,21 @@ results/phase2_resolution/
 
 | 模型 | mAP@0.5 | Precision | Recall | F1 | FPS |
 |------|---------|-----------|--------|----|-----|
-| YOLOv8 | **0.778** | 1.000 | 0.556 | 0.714 | 106 |
-| YOLOv5 | 0.630 | 0.987 | 0.444 | 0.613 | 86 |
-| U-Net  | — | 0.600 | 0.333 | 0.429 | 108 |
-| FCN    | — | 0.182 | 0.444 | 0.258 | 171 |
+| YOLOv8 | 0.418 | 0.920 | 0.222 | 0.358 | 106.2 |
+| YOLOv5 | **0.630** | 0.987 | 0.444 | 0.613 | 107.0 |
+| U-Net  | 0.196 | 0.667 | 0.444 | 0.533 | 119.5 |
+| FCN    | 0.064 | 0.333 | 0.333 | 0.333 | 186.7 |
 
 **UAV：**
 
 | 模型 | mAP@0.5 | Precision | Recall | F1 | FPS |
 |------|---------|-----------|--------|----|-----|
-| YOLOv8 | 0.950 | 1.000 | 0.900 | 0.947 | 114 |
-| YOLOv5 | **0.986** | 1.000 | 0.972 | 0.986 | 104 |
-| U-Net  | — | 0.357 | 1.000 | 0.526 | 248 |
-| FCN    | — | 0.283 | 0.975 | 0.438 | 419 |
+| YOLOv8 | 0.974 | 0.974 | 0.950 | 0.962 | 112.9 |
+| YOLOv5 | **0.986** | 1.000 | 0.972 | 0.986 | 87.4 |
+| U-Net  | 0.210 | 0.274 | 1.000 | 0.430 | 155.1 |
+| FCN    | 0.267 | 0.333 | 0.975 | 0.497 | 337.6 |
 
-> 注：U-Net/FCN 为分割模型，mAP 通过 mask→bbox 后处理计算，与检测模型不可直接比较。
+> 注：U-Net/FCN 为分割模型，mAP 通过 mask→bbox 后处理近似计算，仅可作为同一后处理流程下的参考值，不宜与检测模型直接等价比较。
 
 ### 输出目录
 

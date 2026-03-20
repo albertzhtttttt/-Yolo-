@@ -1,7 +1,7 @@
 # 项目总结报告
 
 **项目名称：** 基于 YOLO 模型的高分辨率遥感影像红树林林窗探测
-**完成日期：** 2026-03-20
+**完成日期：** 2026-03-21
 **服务器：** lfy@172.31.226.112，GPU: Tesla P100 ×6
 
 ---
@@ -32,10 +32,10 @@
 
 | 数据集 | mAP@0.5 | Precision | Recall | F1 |
 |--------|---------|-----------|--------|----|
-| satellite | 0.778 | — | — | — |
-| uav | 0.950 | — | — | — |
+| satellite | 0.418 | 0.920 | 0.222 | 0.358 |
+| uav | 0.974 | 0.974 | 0.950 | 0.962 |
 
-两个模型均通过 mAP@0.5 ≥ 0.70 关卡。
+当前仅 UAV 数据集通过 mAP@0.5 ≥ 0.70 关卡；satellite 基线结果偏低，后续仍需继续调参或补充实验说明。
 
 ---
 
@@ -45,12 +45,12 @@
 
 | 数据集 | 总检测框 |
 |--------|----------|
-| satellite | 20,057 |
-| uav | 36,273 |
+| satellite | 23,712 |
+| uav | 47,196 |
 
-各位置检测框数量（satellite）：Site1=3006, Site2_1=1278, Site2_2=2987, Site2_3=3454, Site3_1=6069, Site3_2=3263
+各位置检测框数量（satellite）：Site1=2704, Site2_1=1409, Site2_2=4046, Site2_3=3941, Site3_1=7785, Site3_2=3827
 
-各位置检测框数量（uav）：Site1=7022, Site2_1=2036, Site2_2=6864, Site2_3=9639, Site3_1=5245, Site3_2=5467
+各位置检测框数量（uav）：Site1=13036, Site2_1=3407, Site2_2=7721, Site2_3=9594, Site3_1=7616, Site3_2=5822
 
 ---
 
@@ -61,6 +61,7 @@
 **主要发现：**
 - Satellite：100% 分辨率 mAP=0.667 最高，75% 下降明显（0.446），50% 有所回升（0.645），说明中等分辨率损失对卫星图像影响较大
 - UAV：各分辨率 mAP 均保持在 0.877 以上，对分辨率降低更鲁棒，50% 时甚至略高于 100%（0.957 vs 0.950）
+- 当前 `results/phase2_resolution/metrics_by_scale.csv` 仅汇总了 UAV 行；satellite 结果已在 `results/phase2_resolution/satellite/scale_*/metrics.csv` 中生成，文档按各子目录实际指标汇总
 
 | 数据集 | 100% | 75% | 50% | 25% |
 |--------|------|-----|-----|-----|
@@ -77,25 +78,25 @@
 
 | 模型 | mAP@0.5 | F1 | FPS | Params(M) |
 |------|---------|-----|-----|-----------|
-| YOLOv8 | **0.778** | 0.714 | 106 | — |
-| YOLOv5 | 0.630 | 0.613 | 86 | — |
-| U-Net  | — | 0.429 | 108 | 31.0 |
-| FCN    | — | 0.258 | 171 | 14.7 |
+| YOLOv8 | 0.418 | 0.358 | 106.2 | — |
+| YOLOv5 | **0.630** | 0.613 | 107.0 | — |
+| U-Net  | 0.196 | 0.533 | 119.5 | 31.0 |
+| FCN    | 0.064 | 0.333 | 186.7 | 14.7 |
 
 ### UAV
 
 | 模型 | mAP@0.5 | F1 | FPS | Params(M) |
 |------|---------|-----|-----|-----------|
-| YOLOv8 | 0.950 | 0.947 | 114 | — |
-| YOLOv5 | **0.986** | 0.986 | 104 | — |
-| U-Net  | — | 0.526 | 248 | 31.0 |
-| FCN    | — | 0.438 | 419 | 14.7 |
+| YOLOv8 | 0.974 | 0.962 | 112.9 | — |
+| YOLOv5 | **0.986** | 0.986 | 87.4 | — |
+| U-Net  | 0.210 | 0.430 | 155.1 | 31.0 |
+| FCN    | 0.267 | 0.497 | 337.6 | 14.7 |
 
 **结论：**
-- 检测模型（YOLOv8/YOLOv5）在林窗检测任务上显著优于分割模型（U-Net/FCN）
-- YOLOv8 在卫星数据上表现最佳；YOLOv5 在 UAV 数据上略优
-- 分割模型 FPS 更高，但精度不足，不适合直接用于林窗检测
-- FCN 参数量最少（14.7M），推理速度最快（419 FPS），但检测精度最低
+- 检测模型（YOLOv8/YOLOv5）整体仍显著优于分割模型（U-Net/FCN）
+- 在当前结果下，YOLOv5 在 satellite 与 UAV 两个测试集上的 mAP@0.5 都高于 YOLOv8
+- 分割模型 FPS 更高，但精度明显不足，更适合作为补充性对比而非主方案
+- FCN 参数量最少、推理速度最快，但检测精度仍最低；U-Net 在 satellite 上的 F1 高于 FCN，但 mAP@0.5 仍明显落后于检测模型
 
 ---
 
@@ -105,14 +106,14 @@
 
 | 模型 | 路径 | mAP@0.5 |
 |------|------|---------|
-| YOLOv8 satellite | `runs/satellite/yolov8/satellite_yolov83/weights/best.pt` | 0.778 |
-| YOLOv8 uav | `runs/uav/yolov8/uav_yolov82/weights/best.pt` | 0.950 |
+| YOLOv8 satellite | `runs/satellite/yolov8/satellite_yolov8/weights/best.pt` | 0.418 |
+| YOLOv8 uav | `runs/uav/yolov8/uav_yolov8/weights/best.pt` | 0.974 |
 | YOLOv5 satellite | `runs/satellite/yolov5/satellite_yolov5n/weights/best.pt` | 0.630 |
 | YOLOv5 uav | `runs/uav/yolov5/uav_yolov5n/weights/best.pt` | 0.986 |
-| U-Net satellite | `runs/satellite/unet/satellite_unet/best.pt` | — |
-| U-Net uav | `runs/uav/unet/uav_unet/best.pt` | — |
-| FCN satellite | `runs/satellite/fcn/satellite_fcn/best.pt` | — |
-| FCN uav | `runs/uav/fcn/uav_fcn/best.pt` | — |
+| U-Net satellite | `runs/satellite/unet/satellite_unet/best.pt` | 0.196 |
+| U-Net uav | `runs/uav/unet/uav_unet/best.pt` | 0.210 |
+| FCN satellite | `runs/satellite/fcn/satellite_fcn/best.pt` | 0.064 |
+| FCN uav | `runs/uav/fcn/uav_fcn/best.pt` | 0.267 |
 
 ### 结果目录
 
