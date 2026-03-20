@@ -1,0 +1,2 @@
+﻿dataset,model,precision,recall,map50,map50_95,f1
+satellite,satellite_scale100_yolov8n2,1.0,0.43864181922427126,0.66676,0.418651,0.6097998964214616
