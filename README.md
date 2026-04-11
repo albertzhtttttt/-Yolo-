@@ -23,7 +23,7 @@ bash scripts/install_env.sh
 ├── configs/                    # 配置文件
 │   ├── satellite_config.yaml   # 卫星数据集参数
 │   ├── uav_config.yaml         # 无人机数据集参数
-│   └── predict_config.yaml     # 大图预测参数（6个TIF位置）
+│   └── predict_config.yaml     # 大图预测参数（按 satellite/uav 拆分位置）
 ├── scripts/                    # 一键运行脚本
 │   ├── run_data_pipeline.py    # P1 数据准备流水线
 │   ├── run_train_pipeline.py   # P2/P3 训练+评估流水线
@@ -66,17 +66,21 @@ python src/evaluate/evaluate.py --dataset satellite \
     --weights runs/satellite/yolov8/satellite_yolov8/weights/best.pt
 ```
 
-### P4：大图预测（6个TIF位置）
+### P4：大图预测（按数据集拆分位置，UAV 当前为福田保护区全域）
 
 ```bash
 python scripts/run_predict.py --dataset satellite \
     --weights runs/satellite/yolov8/satellite_yolov8/weights/best.pt
 
 python scripts/run_predict.py --dataset uav \
-    --weights runs/uav/yolov8/uav_yolov8/weights/best.pt
+    --weights runs/uav/yolov8/uav_yolov8_cbam/weights/best.pt
 ```
 
 输出：`results/phase1_predict/{satellite|uav}/{位置名}/detections.kml/.shp`
+
+说明：
+- UAV 当前预测位置为 `福田保护区全域/shidian.tif`
+- 预测阶段优先使用 GeoTIFF 内嵌空间参考，避免误用旧的外部 `.tfw/.prj`
 
 ### P5：分辨率影响分析
 
@@ -118,10 +122,10 @@ python src/evaluate/compare_models.py --dataset satellite \
 
 ### P4：大图预测检测框统计
 
-| 数据集 | Site1 | Site2_1 | Site2_2 | Site2_3 | Site3_1 | Site3_2 | 合计 |
-|--------|-------|---------|---------|---------|---------|---------|------|
-| satellite | 2704 | 1409 | 4046 | 3941 | 7785 | 3827 | **23,712** |
-| uav | 13036 | 3407 | 7721 | 9594 | 7616 | 5822 | **47,196** |
+| 数据集 | 位置 | 检测框数量 | 说明 |
+|--------|------|------------|------|
+| satellite | 位置1~位置3_2 | 23,712 | 卫星 6 个位置汇总 |
+| uav | 福田保护区全域 | 20,056 | `shidian.tif` 重建后的正式结果 |
 
 ### P5：分辨率影响分析（mAP@0.5）
 
@@ -159,7 +163,7 @@ python src/evaluate/compare_models.py --dataset satellite \
 | 模型 | 路径 | mAP@0.5 |
 |------|------|---------|
 | YOLOv8 satellite | `runs/satellite/yolov8/satellite_yolov8/weights/best.pt` | 0.418 |
-| YOLOv8 uav | `runs/uav/yolov8/uav_yolov8/weights/best.pt` | 0.974 |
+| YOLOv8 uav (CBAM) | `runs/uav/yolov8/uav_yolov8_cbam/weights/best.pt` | 0.974 |
 | YOLOv5 satellite | `runs/satellite/yolov5/satellite_yolov5n/weights/best.pt` | 0.630 |
 | YOLOv5 uav | `runs/uav/yolov5/uav_yolov5n/weights/best.pt` | 0.986 |
 | U-Net satellite | `runs/satellite/unet/satellite_unet/best.pt` | 0.196 |

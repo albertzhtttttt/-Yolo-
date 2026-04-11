@@ -12,7 +12,7 @@
 | `scripts/init_dirs.sh` | 创建完整项目目录结构 |
 | `configs/satellite_config.yaml` | 卫星数据集所有参数（路径/预处理/增强/训练/评估） |
 | `configs/uav_config.yaml` | 无人机数据集所有参数 |
-| `configs/predict_config.yaml` | 大图预测参数（6个TIF位置、切片参数、输出格式） |
+| `configs/predict_config.yaml` | 大图预测参数（按 satellite/uav 拆分位置、切片参数、输出格式） |
 | `src/utils/plot_utils.py` | 统一图表风格（所有标签使用英文）、PR曲线/混淆矩阵绘图函数，DPI≥300 |
 | `src/utils/logger.py` | 统一日志（同时输出控制台+文件，带时间戳） |
 
@@ -47,7 +47,9 @@ python scripts/run_data_pipeline.py --dataset all --vis
 
 | 文件 | 说明 |
 |------|------|
-| `src/train/train_yolov8.py` | YOLOv8 训练主脚本，支持 `--dataset satellite/uav`，命令行覆盖超参数，断点续训，关闭 Ultralytics 内置增强（使用离线增强数据） |
+| `src/train/train_yolov8.py` | YOLOv8 训练主脚本，支持 `--dataset satellite/uav`，命令行覆盖超参数，断点续训，关闭 Ultralytics 内置增强（使用离线增强数据）；支持加载 CBAM 自定义结构 |
+| `src/train/yolo_model_loader.py` | 自定义 YOLO 模型加载器，负责注册 CBAM 模块并兼容自定义 YAML / 权重加载 |
+| `configs/yolov8_gap_cbam_p2.yaml` | UAV 使用的 CBAM 自定义 YOLOv8 结构配置 |
 
 ### P3：评估与可视化脚本
 
