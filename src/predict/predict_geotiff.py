@@ -29,11 +29,13 @@ from typing import List, Tuple, Optional
 
 import cv2
 import numpy as np
+from pyproj import Transformer
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.utils.logger import get_logger
+from src.train.yolo_model_loader import build_yolo_model
 
 
 # =============================================================================
@@ -49,8 +51,8 @@ def read_tfw(tfw_path: str) -> Optional[Tuple[float, float, float, float, float,
         行2: 旋转参数（通常为0）
         行3: 旋转参数（通常为0）
         行4: y方向像素分辨率（北向为负）
-        行5: 左上角像素中心的X坐标（经度）
-        行6: 左上角像素中心的Y坐标（纬度）
+        行5: 左上角像素中心的X坐标（可能是经度，也可能是投影坐标 X）
+        行6: 左上角像素中心的Y坐标（可能是纬度，也可能是投影坐标 Y）
 
     返回值：(pixel_size_x, rot1, rot2, pixel_size_y, origin_x, origin_y)
     """
@@ -66,29 +68,56 @@ def read_tfw(tfw_path: str) -> Optional[Tuple[float, float, float, float, float,
         return None
 
 
+def read_prj(prj_path: Optional[str]) -> Optional[str]:
+    """
+    读取原始影像的 .prj 文本。
+
+    说明：
+        预测框经由 .tfw 转成的坐标，本质上继承的是原始影像坐标系，
+        因此导出 Shapefile 时必须沿用原始 .prj，而不能硬编码成 WGS84。
+    """
+    if not prj_path or not os.path.isfile(prj_path):
+        return None
+    try:
+        with open(prj_path, "r", encoding="utf-8") as f:
+            return f.read().strip() or None
+    except UnicodeDecodeError:
+        with open(prj_path, "r", encoding="gbk", errors="ignore") as f:
+            return f.read().strip() or None
+    except Exception:
+        return None
+
+
 def pixel_to_geo(px: float, py: float,
                  tfw: Tuple[float, float, float, float, float, float]) -> Tuple[float, float]:
     """
-    将像素坐标转换为地理坐标（WGS84 经纬度）。
+    将像素坐标转换为原始影像坐标。
 
     参数：
         px, py: 像素坐标（列, 行），以左上角为原点
-        tfw:    (.tfw 仿射参数)
+        tfw:    .tfw 仿射参数
 
-    返回值：(longitude, latitude)
+    返回值：
+        (x, y)，坐标语义由原始影像 .prj 决定，可能是经纬度，也可能是投影坐标。
     """
     pixel_size_x, rot1, rot2, pixel_size_y, origin_x, origin_y = tfw
-    lon = origin_x + px * pixel_size_x + py * rot1
-    lat = origin_y + px * rot2 + py * pixel_size_y
-    return lon, lat
+    coord_x = origin_x + px * pixel_size_x + py * rot1
+    coord_y = origin_y + px * rot2 + py * pixel_size_y
+    return coord_x, coord_y
 
 
 def bbox_pixel_to_geo(
     x1: float, y1: float, x2: float, y2: float,
     tfw: Tuple[float, float, float, float, float, float],
+    transformer: Optional[Transformer] = None,
 ) -> Tuple[float, float, float, float]:
     """
-    将像素坐标的检测框转换为地理坐标框（min_lon, min_lat, max_lon, max_lat）。
+    将像素坐标的检测框转换为输出坐标框。
+
+    参数：
+        transformer:
+            可选坐标转换器。若提供，则先按 .tfw 转为原始影像坐标，
+            再转换到目标坐标系（例如统一转为 WGS84 经纬度用于 KML）。
     """
     corners = [
         pixel_to_geo(x1, y1, tfw),
@@ -96,9 +125,11 @@ def bbox_pixel_to_geo(
         pixel_to_geo(x1, y2, tfw),
         pixel_to_geo(x2, y2, tfw),
     ]
-    lons = [c[0] for c in corners]
-    lats = [c[1] for c in corners]
-    return min(lons), min(lats), max(lons), max(lats)
+    if transformer is not None:
+        corners = [transformer.transform(coord_x, coord_y) for coord_x, coord_y in corners]
+    xs = [c[0] for c in corners]
+    ys = [c[1] for c in corners]
+    return min(xs), min(ys), max(xs), max(ys)
 
 
 # =============================================================================
@@ -122,57 +153,53 @@ def get_tif_size(tif_path: str) -> Tuple[int, int]:
     return 0, 0
 
 
-def read_tile_rasterio(tif_path: str, col: int, row: int, tile_size: int) -> Optional[np.ndarray]:
+def read_tile_rasterio(src, col: int, row: int, tile_size: int) -> Optional[np.ndarray]:
     """
-    使用 rasterio 窗口读取单个切片（不加载全图）。
+    使用已打开的 rasterio 数据集窗口读取单个切片（不加载全图）。
 
     参数：
-        tif_path:  GeoTIFF 路径
+        src:       已打开的 rasterio 数据集对象
         col, row:  切片左上角像素坐标
         tile_size: 切片尺寸
 
     返回值：BGR uint8 图像，shape=(tile_size, tile_size, 3)
     """
-    import rasterio
     from rasterio.windows import Window
 
-    with rasterio.open(tif_path) as src:
-        win = Window(col, row, tile_size, tile_size)
-        n_bands = src.count
+    # 这里复用外层已打开的 src，避免每个 tile 都重复打开 GeoTIFF，
+    # 这是大图预测最主要的 I/O 优化点之一。
+    win = Window(col, row, tile_size, tile_size)
+    n_bands = src.count
 
-        if n_bands >= 3:
-            r = src.read(1, window=win)
-            g = src.read(2, window=win)
-            b = src.read(3, window=win)
-        elif n_bands == 1:
-            gray = src.read(1, window=win)
-            r = g = b = gray
-        else:
-            r = src.read(1, window=win)
-            g = src.read(2, window=win) if n_bands >= 2 else r.copy()
-            b = r.copy()
+    # 尽量一次性读取所需波段，减少 rasterio/GDAL 的调用次数。
+    if n_bands >= 3:
+        array = src.read([1, 2, 3], window=win)
+    elif n_bands == 1:
+        gray = src.read([1], window=win)
+        array = np.repeat(gray, 3, axis=0)
+    else:
+        array = src.read([1, 2], window=win)
+        array = np.concatenate([array, array[:1]], axis=0)
 
-    # 填充到 tile_size（边缘切片可能不足）
-    def pad_band(band):
-        if band.shape[0] < tile_size or band.shape[1] < tile_size:
-            padded = np.zeros((tile_size, tile_size), dtype=band.dtype)
-            padded[:band.shape[0], :band.shape[1]] = band
-            return padded
-        return band
+    # 填充到 tile_size（边缘切片可能不足），保持后续推理输入尺寸稳定。
+    if array.shape[1] < tile_size or array.shape[2] < tile_size:
+        padded = np.zeros((array.shape[0], tile_size, tile_size), dtype=array.dtype)
+        padded[:, :array.shape[1], :array.shape[2]] = array
+        array = padded
 
-    r, g, b = pad_band(r), pad_band(g), pad_band(b)
-
-    # 转换为 uint8
-    def to_uint8(band):
+    # 逐通道保持现有 min/max 拉伸语义，避免本次性能优化改变检测输入分布。
+    rgb = np.transpose(array, (1, 2, 0))
+    image = np.zeros((tile_size, tile_size, 3), dtype=np.uint8)
+    for channel in range(3):
+        band = rgb[:, :, channel]
         if band.dtype == np.uint8:
-            return band
+            image[:, :, channel] = band
+            continue
         lo, hi = band.min(), band.max()
         if hi > lo:
-            return ((band.astype(np.float32) - lo) / (hi - lo) * 255).astype(np.uint8)
-        return np.zeros_like(band, dtype=np.uint8)
+            image[:, :, channel] = ((band.astype(np.float32) - lo) / (hi - lo) * 255).astype(np.uint8)
 
-    r, g, b = to_uint8(r), to_uint8(g), to_uint8(b)
-    return cv2.merge([b, g, r])
+    return cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
 
 def read_tile_opencv(tif_path: str, col: int, row: int, tile_size: int,
@@ -370,6 +397,7 @@ def write_kmz(kml_path: str, kmz_path: str) -> None:
 def write_shp(
     detections_geo: List[Tuple[float, float, float, float, float]],
     out_path: str,
+    prj_wkt: Optional[str] = None,
 ) -> None:
     """
     将地理坐标检测框写入 Shapefile（.shp + .dbf + .shx + .prj）。
@@ -512,14 +540,18 @@ def write_shp(
             f.write(f"{score:>10.6f}".encode("ascii"))
 
     # ── PRJ 文件（坐标系）────────────────────────────────────────────────────
-    wgs84_wkt = (
+    # 说明：
+    #   检测框坐标由 .tfw 仿射参数直接换算得到，因此必须继承原始影像的 .prj。
+    #   若这里错误地硬编码成 WGS84，会导致 GIS 软件按错误坐标系解释坐标，
+    #   进而出现加载失败或位置完全异常。
+    prj_text = prj_wkt or (
         'GEOGCS["GCS_WGS_1984",'
         'DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],'
         'PRIMEM["Greenwich",0.0],'
         'UNIT["Degree",0.0174532925199433]]'
     )
-    with open(base + ".prj", "w") as f:
-        f.write(wgs84_wkt)
+    with open(base + ".prj", "w", encoding="utf-8") as f:
+        f.write(prj_text)
 
 
 # =============================================================================
@@ -610,7 +642,11 @@ def predict_geotiff(
         sys.exit(1)
 
     logger.info(f"加载模型：{model_path}")
-    model = YOLO(model_path)
+    model, _ = build_yolo_model(
+        model_name=model_path,
+        use_pretrained=False,
+        logger=logger,
+    )
 
     # ── 获取图像尺寸（不加载全图）────────────────────────────────────────────
     logger.info(f"读取图像信息：{tif_path}")
@@ -622,6 +658,8 @@ def predict_geotiff(
 
     # ── 读取地理变换参数 ──────────────────────────────────────────────────────
     tfw = None
+    source_prj_wkt = None
+    geo_transformer = None
     if tfw_path:
         tfw = read_tfw(tfw_path)
         if tfw:
@@ -629,6 +667,33 @@ def predict_geotiff(
                         f"pixel_size=({tfw[0]:.8f}, {tfw[3]:.8f})")
         else:
             logger.warning(f"无法读取 .tfw 文件：{tfw_path}")
+
+        prj_candidate = str(Path(tfw_path).with_suffix('.prj'))
+        source_prj_wkt = read_prj(prj_candidate)
+        if source_prj_wkt:
+            logger.info(f"读取原始投影成功：{prj_candidate}")
+        else:
+            logger.warning(f"未找到可用的原始 .prj 文件：{prj_candidate}")
+
+    # 若 GeoTIFF 自身包含更可靠的空间参考，则优先使用它。
+    # 这样即使外部 .tfw/.prj 指向了旧影像，也不会把当前预测结果投错位置。
+    try:
+        import rasterio
+        with rasterio.open(tif_path) as src_ref:
+            if src_ref.transform is not None:
+                affine = src_ref.transform
+                tfw = (affine.a, affine.b, affine.d, affine.e, affine.c, affine.f)
+                logger.info("优先使用 GeoTIFF 内嵌 transform 作为坐标来源")
+            if src_ref.crs:
+                source_prj_wkt = src_ref.crs.to_wkt()
+                logger.info(f"优先使用 GeoTIFF 内嵌 CRS：{src_ref.crs}")
+                if mode in ("geo", "auto"):
+                    try:
+                        geo_transformer = Transformer.from_crs(src_ref.crs, "EPSG:4326", always_xy=True)
+                    except Exception as exc:
+                        logger.warning(f"构建坐标转换器失败，将直接输出原始坐标系：{exc}")
+    except Exception as exc:
+        logger.warning(f"读取 GeoTIFF 内嵌空间参考失败：{exc}")
 
     # 判断输出模式
     use_geo = (mode == "geo") or (mode == "auto" and tfw is not None)
@@ -643,66 +708,73 @@ def predict_geotiff(
 
     # 检测 rasterio 是否可用（决定读取方式）
     use_rasterio = False
+    rasterio_src = None
     try:
         import rasterio
+        rasterio_src = rasterio.open(tif_path)
         use_rasterio = True
-        logger.info("使用 rasterio 窗口读取（内存高效）")
+        logger.info("使用 rasterio 窗口读取（单次打开，复用句柄）")
     except ImportError:
         logger.warning("rasterio 不可用，回退到 OpenCV 全图读取")
+    except Exception as exc:
+        logger.warning(f"rasterio 打开失败，回退到 OpenCV 全图读取：{exc}")
 
     # OpenCV 回退时的全图缓存
     img_cache = {}
 
     # ── 批量推理 ──────────────────────────────────────────────────────────────
     all_detections = []  # [(x1_global, y1_global, x2_global, y2_global, score), ...]
-    tile_detections = {}  # {(row, col): [(x1_local, y1_local, x2_local, y2_local, score), ...]}
+    tile_detections = {} if not use_geo else None  # 仅 tiles 模式需要保留局部框信息
 
     logger.info(f"开始推理（batch_size={batch_size}）...")
-    for batch_start in range(0, len(tile_coords), batch_size):
-        batch_coords = tile_coords[batch_start:batch_start + batch_size]
+    try:
+        for batch_start in range(0, len(tile_coords), batch_size):
+            batch_coords = tile_coords[batch_start:batch_start + batch_size]
 
-        # 读取当前批次的切片图像
-        batch_imgs = []
-        for row, col in batch_coords:
-            if use_rasterio:
-                tile = read_tile_rasterio(tif_path, col, row, tile_size)
-            else:
-                tile = read_tile_opencv(tif_path, col, row, tile_size, img_cache)
-            if tile is None:
-                tile = np.zeros((tile_size, tile_size, 3), dtype=np.uint8)
-            batch_imgs.append(tile)
+            # 读取当前批次的切片图像
+            batch_imgs = []
+            for row, col in batch_coords:
+                if use_rasterio and rasterio_src is not None:
+                    tile = read_tile_rasterio(rasterio_src, col, row, tile_size)
+                else:
+                    tile = read_tile_opencv(tif_path, col, row, tile_size, img_cache)
+                if tile is None:
+                    tile = np.zeros((tile_size, tile_size, 3), dtype=np.uint8)
+                batch_imgs.append(tile)
 
-        results = model.predict(
-            batch_imgs,
-            conf=conf_thres,
-            iou=iou_thres,
-            imgsz=tile_size,
-            device=device,
-            verbose=False,
-        )
+            results = model.predict(
+                batch_imgs,
+                conf=conf_thres,
+                iou=iou_thres,
+                imgsz=tile_size,
+                device=device,
+                verbose=False,
+            )
 
-        for (row, col), result in zip(batch_coords, results):
-            local_boxes = []
-            if result.boxes and len(result.boxes):
-                for box in result.boxes:
-                    x1, y1, x2, y2 = box.xyxy[0].tolist()
-                    score = float(box.conf[0])
-                    # 转换为全图像素坐标
-                    all_detections.append((
-                        x1 + col, y1 + row,
-                        x2 + col, y2 + row,
-                        score,
-                    ))
-                    local_boxes.append((x1, y1, x2, y2, score))
-            tile_detections[(row, col)] = local_boxes
+            for (row, col), result in zip(batch_coords, results):
+                local_boxes = []
+                if result.boxes and len(result.boxes):
+                    for box in result.boxes:
+                        x1, y1, x2, y2 = box.xyxy[0].tolist()
+                        score = float(box.conf[0])
+                        # 转换为全图像素坐标
+                        all_detections.append((
+                            x1 + col, y1 + row,
+                            x2 + col, y2 + row,
+                            score,
+                        ))
+                        local_boxes.append((x1, y1, x2, y2, score))
+                if tile_detections is not None:
+                    tile_detections[(row, col)] = local_boxes
 
-        processed = batch_start + len(batch_coords)
-        if processed % (batch_size * 10) == 0 or processed == len(tile_coords):
-            logger.info(f"  已处理 {processed}/{len(tile_coords)} 个切片，"
-                        f"当前检测框数：{len(all_detections)}")
-
-    # 释放 OpenCV 全图缓存
-    img_cache.clear()
+            processed = batch_start + len(batch_coords)
+            if processed % (batch_size * 10) == 0 or processed == len(tile_coords):
+                logger.info(f"  已处理 {processed}/{len(tile_coords)} 个切片，"
+                            f"当前检测框数：{len(all_detections)}")
+    finally:
+        if rasterio_src is not None:
+            rasterio_src.close()
+        img_cache.clear()
 
     logger.info(f"推理完成，NMS前检测框数：{len(all_detections)}")
 
@@ -717,7 +789,9 @@ def predict_geotiff(
         logger.info("方案A：转换地理坐标，输出 KML/SHP...")
         detections_geo = []
         for x1, y1, x2, y2, score in all_detections:
-            min_lon, min_lat, max_lon, max_lat = bbox_pixel_to_geo(x1, y1, x2, y2, tfw)
+            min_lon, min_lat, max_lon, max_lat = bbox_pixel_to_geo(
+                x1, y1, x2, y2, tfw, transformer=geo_transformer
+            )
             detections_geo.append((min_lon, min_lat, max_lon, max_lat, score))
 
         kml_path = os.path.join(output_dir, "detections.kml")
@@ -726,7 +800,7 @@ def predict_geotiff(
 
         write_kml(detections_geo, location_name, kml_path)
         write_kmz(kml_path, kmz_path)
-        write_shp(detections_geo, shp_path)
+        write_shp(detections_geo, shp_path, prj_wkt=source_prj_wkt)
 
         output_files += [kml_path, kmz_path, shp_path]
         logger.info(f"KML/KMZ/SHP 已保存至：{output_dir}")
@@ -734,26 +808,41 @@ def predict_geotiff(
 
     else:
         # ── 方案B：保存带标注的切片 ───────────────────────────────────────────
-        logger.info("方案B：保存带检测框的切片图像...")
-        tiles_dir = os.path.join(output_dir, "tiles")
-        saved_count = 0
-        for (row, col), local_boxes in tile_detections.items():
-            if not local_boxes:
-                continue
-            # 重新读取该切片用于可视化
-            if use_rasterio:
-                tile_img = read_tile_rasterio(tif_path, col, row, tile_size)
-            else:
-                tile_img = read_tile_opencv(tif_path, col, row, tile_size, img_cache)
-            if tile_img is None:
-                continue
-            tile_path = os.path.join(tiles_dir, f"tile_r{row:05d}_c{col:05d}.jpg")
-            save_annotated_tile(tile_img, local_boxes, tile_path)
-            output_files.append(tile_path)
-            saved_count += 1
-        img_cache.clear()
-        logger.info(f"已保存 {saved_count} 张含检测结果的切片至：{tiles_dir}")
         output_mode = "tiles"
+        if not save_annotated_tiles:
+            logger.info("方案B：跳过带检测框切片导出（save_annotated_tiles=False）")
+        else:
+            logger.info("方案B：保存带检测框的切片图像...")
+            tiles_dir = os.path.join(output_dir, "tiles")
+            saved_count = 0
+            tile_items = tile_detections.items() if tile_detections is not None else []
+            rasterio_src = None
+            try:
+                if use_rasterio:
+                    import rasterio
+                    rasterio_src = rasterio.open(tif_path)
+
+                for (row, col), local_boxes in tile_items:
+                    if not local_boxes:
+                        continue
+                    # 这里仍然需要重新读取命中切片用于可视化，但会复用单个已打开的句柄，
+                    # 避免再次为每个 tile 反复 open 大图文件。
+                    if use_rasterio and rasterio_src is not None:
+                        tile_img = read_tile_rasterio(rasterio_src, col, row, tile_size)
+                    else:
+                        tile_img = read_tile_opencv(tif_path, col, row, tile_size, img_cache)
+                    if tile_img is None:
+                        continue
+                    tile_path = os.path.join(tiles_dir, f"tile_r{row:05d}_c{col:05d}.jpg")
+                    save_annotated_tile(tile_img, local_boxes, tile_path)
+                    output_files.append(tile_path)
+                    saved_count += 1
+            finally:
+                if rasterio_src is not None:
+                    rasterio_src.close()
+                img_cache.clear()
+
+            logger.info(f"已保存 {saved_count} 张含检测结果的切片至：{tiles_dir}")
 
     # ── 保存 summary.csv ──────────────────────────────────────────────────────
     summary_path = os.path.join(output_dir, "summary.csv")

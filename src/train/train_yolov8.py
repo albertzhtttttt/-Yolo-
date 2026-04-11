@@ -39,6 +39,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.utils.logger import get_logger
+from src.train.yolo_model_loader import build_yolo_model
 
 
 def _auto_select_gpu() -> str:
@@ -201,16 +202,30 @@ def main():
         model = YOLO(args.resume)
         train_args["resume"] = True
     else:
+        # 支持两类模型来源：
+        # 1）Ultralytics 内置模型名（如 yolov8n）；
+        # 2）仓库内自定义结构 YAML（如加入 CBAM 的模型结构）。
+        pretrained_weights = None
+        if (not args.no_pretrain) and model_name.endswith((".yaml", ".yml")):
+            # 自定义结构场景下，仍希望复用官方预训练权重进行迁移学习，
+            # 因此这里根据配置中的基础模型名自动选择对应的 .pt 权重。
+            pretrained_weights = cfg.get("train", {}).get("pretrained_weights")
+            if not pretrained_weights:
+                base_model = cfg.get("train", {}).get("base_model", "yolov8n")
+                pretrained_weights = base_model + ".pt"
+
+        model, model_source = build_yolo_model(
+            model_name=model_name,
+            use_pretrained=not args.no_pretrain,
+            pretrained_weights=pretrained_weights,
+            logger=logger,
+        )
         if args.no_pretrain:
-            # 从头训练：加载模型结构 yaml（不含预训练权重）
-            model_yaml = model_name + ".yaml"
-            logger.info(f"从头训练（无预训练权重）：{model_yaml}")
-            model = YOLO(model_yaml)
+            logger.info(f"从头训练（无预训练权重）：{model_source}")
+        elif pretrained_weights:
+            logger.info(f"迁移学习（自定义结构 + 预训练权重）：{pretrained_weights}")
         else:
-            # 迁移学习：加载 COCO 预训练权重
-            model_pt = model_name + ".pt"
-            logger.info(f"迁移学习（COCO 预训练）：{model_pt}")
-            model = YOLO(model_pt)
+            logger.info(f"迁移学习（预训练初始化）：{model_source}")
 
     # ── 开始训练 ──────────────────────────────────────────────────────────────
     logger.info("开始训练...")

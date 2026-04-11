@@ -84,7 +84,8 @@ def run_dataset_predict(
     返回值：
         [{"name": str, "n_detections": int, "output_mode": str}, ...]
     """
-    output_root = cfg["data"]["output_root"]
+    data_cfg = cfg["data"]
+    output_root = data_cfg["output_root"]
     tiling = cfg["tiling"]
     inference = cfg["inference"]
     output_cfg = cfg["output"]
@@ -95,7 +96,12 @@ def run_dataset_predict(
     dev  = device     if device     is not None else inference["device"]
 
     results = []
-    locations = cfg["data"]["locations"]
+    locations_map = data_cfg.get("locations", {})
+    if isinstance(locations_map, dict):
+        locations = locations_map.get(dataset, [])
+    else:
+        # 向后兼容旧版配置：locations 直接是列表时，沿用旧行为。
+        locations = locations_map
 
     logger.info(f"=== {dataset.upper()} 模型预测开始，共 {len(locations)} 个位置 ===")
     logger.info(f"权重：{weights}")

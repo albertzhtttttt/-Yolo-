@@ -51,6 +51,7 @@ from src.utils.plot_utils import (
     setup_plot_style, save_fig, PALETTE,
     draw_confusion_matrix, draw_pr_curve, draw_loss_curve,
 )
+from src.train.yolo_model_loader import build_yolo_model
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -493,7 +494,11 @@ def main():
         logger.error("未找到 ultralytics，请运行：pip install ultralytics==8.2.87")
         sys.exit(1)
 
-    model = YOLO(args.weights)
+    model, _ = build_yolo_model(
+        model_name=args.weights,
+        use_pretrained=False,
+        logger=logger,
+    )
     dataset_yaml  = cfg["data"]["dataset_yaml"]
     class_names   = cfg["classes"]["names"]
 

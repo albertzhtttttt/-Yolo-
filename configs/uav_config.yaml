@@ -54,7 +54,9 @@ augmentation:
 
 # ── 训练超参数 ────────────────────────────────────────────────────────────────
 train:
-  model: "yolov8n"        # 初始选型（n/s/m 依次尝试）
+  model: "configs/yolov8_gap_cbam_p2.yaml"  # 使用加入 CBAM 的自定义 YOLOv8 结构
+  base_model: "yolov8n"                     # 自定义结构的预训练权重来源
+  pretrained_weights: "yolov8n.pt"         # 迁移学习初始化权重
   imgsz: 640
   epochs: 150
   batch: 16
@@ -70,7 +72,7 @@ train:
   device: "0"
   workers: 4
   save_dir: "runs/uav/yolov8"
-  project_name: "uav_yolov8"
+  project_name: "uav_yolov8_cbam"
 
 # ── 类别定义 ──────────────────────────────────────────────────────────────────
 classes:

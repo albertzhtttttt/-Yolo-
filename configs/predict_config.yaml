@@ -6,35 +6,45 @@
 
 # ── 预测数据路径 ──────────────────────────────────────────────────────────────
 data:
-  predict_root: "data/predict"        # 预测 TIF 根目录
-  output_root:  "results/phase1_predict"  # 输出结果根目录
+  predict_root: "data/predict"             # 预测数据根目录
+  satellite_root: "data/predict/satellite" # 卫星大图根目录
+  uav_root: "data/predict/uav"             # 无人机大图根目录
+  output_root:  "results/phase1_predict"   # 输出结果根目录
 
-  # 6个预测位置（TIF文件相对路径）
+  # 预测位置按数据集拆分，便于后续扩展不同目录结构。
   locations:
-    - name: "位置1"
-      tif: "data/predict/位置1/Level20/pos1_now.tif"
-      tfw: "data/predict/位置1/Level20/位置1_now.tfw"
-      prj: "data/predict/位置1/Level20/位置1_now.prj"
-    - name: "位置2_1"
-      tif: "data/predict/位置2_1/Level20/pos2_1.tif"
-      tfw: "data/predict/位置2_1/Level20/位置2_1.tfw"
-      prj: "data/predict/位置2_1/Level20/位置2_1.prj"
-    - name: "位置2_2"
-      tif: "data/predict/位置2_2/Level20/pos2_2.tif"
-      tfw: "data/predict/位置2_2/Level20/位置2_2.tfw"
-      prj: "data/predict/位置2_2/Level20/位置2_2.prj"
-    - name: "位置2_3"
-      tif: "data/predict/位置2_3/Level20/pos2_3.tif"
-      tfw: "data/predict/位置2_3/Level20/位置2_3.tfw"
-      prj: "data/predict/位置2_3/Level20/位置2_3.prj"
-    - name: "位置3_1"
-      tif: "data/predict/位置3_1/Level20/pos3_1.tif"
-      tfw: "data/predict/位置3_1/Level20/位置3_1.tfw"
-      prj: "data/predict/位置3_1/Level20/位置3_1.prj"
-    - name: "位置3_2"
-      tif: "data/predict/位置3_2/Level20/pos3_2.tif"
-      tfw: "data/predict/位置3_2/Level20/位置3_2.tfw"
-      prj: "data/predict/位置3_2/Level20/位置3_2.prj"
+    satellite:
+      - name: "位置1"
+        tif: "data/predict/satellite/位置1/Level20/pos1_now.tif"
+        tfw: "data/predict/satellite/位置1/Level20/位置1_now.tfw"
+        prj: "data/predict/satellite/位置1/Level20/位置1_now.prj"
+      - name: "位置2_1"
+        tif: "data/predict/satellite/位置2_1/Level20/pos2_1.tif"
+        tfw: "data/predict/satellite/位置2_1/Level20/位置2_1.tfw"
+        prj: "data/predict/satellite/位置2_1/Level20/位置2_1.prj"
+      - name: "位置2_2"
+        tif: "data/predict/satellite/位置2_2/Level20/pos2_2.tif"
+        tfw: "data/predict/satellite/位置2_2/Level20/位置2_2.tfw"
+        prj: "data/predict/satellite/位置2_2/Level20/位置2_2.prj"
+      - name: "位置2_3"
+        tif: "data/predict/satellite/位置2_3/Level20/pos2_3.tif"
+        tfw: "data/predict/satellite/位置2_3/Level20/位置2_3.tfw"
+        prj: "data/predict/satellite/位置2_3/Level20/位置2_3.prj"
+      - name: "位置3_1"
+        tif: "data/predict/satellite/位置3_1/Level20/pos3_1.tif"
+        tfw: "data/predict/satellite/位置3_1/Level20/位置3_1.tfw"
+        prj: "data/predict/satellite/位置3_1/Level20/位置3_1.prj"
+      - name: "位置3_2"
+        tif: "data/predict/satellite/位置3_2/Level20/pos3_2.tif"
+        tfw: "data/predict/satellite/位置3_2/Level20/位置3_2.tfw"
+        prj: "data/predict/satellite/位置3_2/Level20/位置3_2.prj"
+    uav:
+      - name: "福田保护区全域"
+        tif: "data/predict/uav/福田保护区全域/shidian.tif"
+        # 说明：
+        #   shidian.tif 自带正确的空间参考信息，预测阶段优先读取 GeoTIFF 内嵌
+        #   transform 与 CRS，不再依赖旧影像遗留的 result.tfw / result.prj，
+        #   避免将检测结果错误投影到其他区域。
 
 # ── 切片参数 ──────────────────────────────────────────────────────────────────
 tiling:
