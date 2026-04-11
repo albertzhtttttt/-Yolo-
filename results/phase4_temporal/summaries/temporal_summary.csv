@@ -1,0 +1,7 @@
+year,n_detections,output_mode,tif_width,tif_height,n_tiles,output_dir
+2021-01-01,125,geo,9216,4352,364,results/phase4_temporal/predictions/2021-01-01
+2022-01-01,83,geo,9216,4352,364,results/phase4_temporal/predictions/2022-01-01
+2023-01-01,96,geo,9216,4352,364,results/phase4_temporal/predictions/2023-01-01
+2024-01-01,135,geo,9216,4352,364,results/phase4_temporal/predictions/2024-01-01
+2025-01-01,160,geo,9216,4352,364,results/phase4_temporal/predictions/2025-01-01
+2026-01-01,160,geo,9216,4352,364,results/phase4_temporal/predictions/2026-01-01
