@@ -37,7 +37,7 @@ bash scripts/install_env.sh
 │   └── visualize/              # 可视化
 ├── data/                       # 数据集（不纳入版本控制）
 ├── runs/                       # 训练输出（不纳入版本控制）
-├── results/                    # 实验结果（不纳入版本控制）
+├── results/                    # 实验结果
 └── vibe-docs/                  # 项目文档
     ├── requirements.md         # 需求文档
     ├── TODO.md                 # 执行计划
