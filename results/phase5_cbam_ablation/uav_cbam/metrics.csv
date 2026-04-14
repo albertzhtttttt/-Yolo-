@@ -1,0 +1,2 @@
+﻿dataset,model,precision,recall,map50,map50_95,f1
+uav,uav_yolov8_cbam,1.0,0.9641760232920764,0.9867,0.8012213387071281,0.9817613156352996

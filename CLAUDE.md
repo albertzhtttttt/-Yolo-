@@ -58,6 +58,14 @@ python scripts/run_history_predict.py \
     --device 0
 ```
 
+### CBAM Ablation (P7)
+```bash
+python scripts/run_cbam_ablation.py \
+    --baseline_weight runs/uav/yolov8/uav_yolov8/weights/best.pt \
+    --cbam_weight runs/uav/yolov8/uav_yolov8_cbam/weights/best.pt \
+    --device 0
+```
+
 ## Architecture
 
 ### Data Flow
@@ -106,8 +114,9 @@ Core hyperparameters live in `configs/{satellite,uav,predict}_config.yaml`, whil
 - `results/phase3_comparison/` — multi-model comparison outputs
 - `results/phase4_temporal/predictions/` — per-year temporal prediction outputs
 - `results/phase4_temporal/summaries/` — temporal CSV and charts
+- `results/phase5_cbam_ablation/` — UAV baseline vs CBAM ablation tables and paper-ready figures
 - `logs/` — pipeline execution logs
 
 ### Best Model Weights
 - Satellite YOLOv8: `runs/satellite/yolov8/satellite_yolov8/weights/best.pt` (mAP@0.5=0.418)
-- UAV YOLOv8 + CBAM: `runs/uav/yolov8/uav_yolov8_cbam/weights/best.pt` (mAP@0.5=0.974)
+- UAV YOLOv8 + CBAM: `runs/uav/yolov8/uav_yolov8_cbam/weights/best.pt` (mAP@0.5=0.987)

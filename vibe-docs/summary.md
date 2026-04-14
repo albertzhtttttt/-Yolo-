@@ -23,6 +23,7 @@
 | P4 | GeoTIFF 大图预测（6个位置） | ✅ 完成 |
 | P5 | 分辨率影响分析（4个分辨率级别） | ✅ 完成 |
 | P6 | 多模型对比实验（YOLOv5/U-Net/FCN） | ✅ 完成 |
+| P7 | UAV CBAM 消融实验与论文图补充 | ✅ 完成 |
 
 ---
 
@@ -87,14 +88,15 @@
 
 | 模型 | mAP@0.5 | F1 | FPS | Params(M) |
 |------|---------|-----|-----|-----------|
-| YOLOv8 | 0.974 | 0.962 | 112.9 | — |
+| YOLOv8 baseline | 0.974 | 0.962 | 112.9 | — |
 | YOLOv5 | **0.986** | 0.986 | 87.4 | — |
 | U-Net  | 0.210 | 0.430 | 155.1 | 31.0 |
 | FCN    | 0.267 | 0.497 | 337.6 | 14.7 |
 
 **结论：**
 - 检测模型（YOLOv8/YOLOv5）整体仍显著优于分割模型（U-Net/FCN）
-- 在当前结果下，YOLOv5 在 satellite 与 UAV 两个测试集上的 mAP@0.5 都高于 YOLOv8
+- 在当前对比实验结果下，YOLOv5 在 satellite 与 UAV 两个测试集上的 mAP@0.5 都高于 YOLOv8 baseline
+- 补充的 UAV CBAM 消融实验表明，YOLOv8n + CBAM 相对 baseline 将 mAP@0.5 从 0.974 提升到 0.987，将 mAP@0.5:0.95 从 0.709 提升到 0.801
 - 分割模型 FPS 更高，但精度明显不足，更适合作为补充性对比而非主方案
 - FCN 参数量最少、推理速度最快，但检测精度仍最低；U-Net 在 satellite 上的 F1 高于 FCN，但 mAP@0.5 仍明显落后于检测模型
 
@@ -107,7 +109,8 @@
 | 模型 | 路径 | mAP@0.5 |
 |------|------|---------|
 | YOLOv8 satellite | `runs/satellite/yolov8/satellite_yolov8/weights/best.pt` | 0.418 |
-| YOLOv8 uav | `runs/uav/yolov8/uav_yolov8/weights/best.pt` | 0.974 |
+| YOLOv8 uav baseline | `runs/uav/yolov8/uav_yolov8/weights/best.pt` | 0.974 |
+| YOLOv8 uav + CBAM | `runs/uav/yolov8/uav_yolov8_cbam/weights/best.pt` | 0.987 |
 | YOLOv5 satellite | `runs/satellite/yolov5/satellite_yolov5n/weights/best.pt` | 0.630 |
 | YOLOv5 uav | `runs/uav/yolov5/uav_yolov5n/weights/best.pt` | 0.986 |
 | U-Net satellite | `runs/satellite/unet/satellite_unet/best.pt` | 0.196 |
@@ -123,6 +126,7 @@
 | P4 预测结果 | `results/phase1_predict/{satellite\|uav}/{位置名}/` |
 | P5 分辨率分析 | `results/phase2_resolution/` |
 | P6 对比实验 | `results/phase3_comparison/` |
+| P7 CBAM 消融 | `results/phase5_cbam_ablation/` |
 
 ---
 
@@ -132,3 +136,4 @@
 2. **并行训练**：P5/P6 充分利用服务器 6 块 Tesla P100，通过 `--device` 参数分配 GPU，最多同时运行 6 个训练任务
 3. **分割模型评估**：U-Net/FCN 输出二值掩码，通过连通域分析转为检测框后计算 P/R/F1，mAP 计算方式与检测模型不同，不可直接比较
 4. **图表英文化**：所有 matplotlib 图表标签均使用英文，避免服务器无中文字体导致的渲染问题
+5. **补充消融实验**：`scripts/run_cbam_ablation.py` 将 UAV baseline 与 CBAM 结果统一汇总到 `results/phase5_cbam_ablation/`，便于论文直接引用

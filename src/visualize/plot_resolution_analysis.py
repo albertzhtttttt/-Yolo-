@@ -31,6 +31,10 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from src.utils.plot_utils import setup_plot_style, save_fig, PALETTE, LINE_STYLES, MARKERS, HATCHES
 from src.utils.logger import get_logger
 
+# 论文正文当前固定展示 4 个分辨率等级，统一按从低到高排列，
+# 便于横向阅读并与论文表格中的 25/50/75/100 顺序保持一致。
+DEFAULT_SCALE_ORDER = [25, 50, 75, 100]
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="分辨率影响分析可视化")
@@ -102,14 +106,19 @@ def plot_metrics_by_scale(results: dict, output_dir: str) -> None:
         "satellite": "Satellite",
         "uav": "UAV",
     }
+    # 优先沿用论文当前采用的 25→100 横向顺序；如果后续扩展了新比例，
+    # 则自动把额外比例追加到末尾，避免脚本因新实验比例而失效。
+    observed_scales = sorted(set(scale for scale_data in results.values() for scale in scale_data.keys()))
+    scale_order = [scale for scale in DEFAULT_SCALE_ORDER if scale in observed_scales]
+    scale_order.extend(scale for scale in observed_scales if scale not in scale_order)
 
-    fig, axes = plt.subplots(2, 2, figsize=(7.2, 5.2), sharex=True, sharey=True)
+    fig, axes = plt.subplots(2, 2, figsize=(6.9, 4.9), sharex=True, sharey=True)
     axes = axes.reshape(-1)
 
     for ax, (metric_key, metric_label) in zip(axes, metrics_to_plot):
         for idx, dataset in enumerate(datasets):
             scale_data = results[dataset]
-            scales = sorted(scale_data.keys(), reverse=True)
+            scales = [scale for scale in scale_order if scale in scale_data]
             values = [scale_data[s][metric_key] for s in scales]
             ax.plot(
                 scales,
@@ -125,10 +134,9 @@ def plot_metrics_by_scale(results: dict, output_dir: str) -> None:
             )
 
         ax.set_title(metric_label, pad=4)
-        ax.set_xticks([100, 75, 50, 25])
-        ax.set_xticklabels(["100", "75", "50", "25"])
+        ax.set_xticks(scale_order)
+        ax.set_xticklabels([str(scale) for scale in scale_order])
         ax.set_ylim(0, 1.02)
-        ax.invert_xaxis()
 
     for ax in axes[::2]:
         ax.set_ylabel("Score")
@@ -136,8 +144,8 @@ def plot_metrics_by_scale(results: dict, output_dir: str) -> None:
         ax.set_xlabel("Resolution scale (%)")
 
     handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="upper center", ncol=len(labels), frameon=False, bbox_to_anchor=(0.5, 1.02))
-    fig.tight_layout(rect=[0, 0, 1, 0.96])
+    fig.legend(handles, labels, loc="upper center", ncol=len(labels), frameon=False, bbox_to_anchor=(0.5, 1.00))
+    fig.tight_layout(rect=[0, 0, 1, 0.94])
 
     out_path = os.path.join(output_dir, "resolution_analysis.png")
     save_fig(fig, out_path)
@@ -156,16 +164,17 @@ def plot_scale_comparison_bar(results: dict, output_dir: str) -> None:
     if not datasets:
         return
 
-    all_scales = sorted(set(
-        s for d in datasets for s in results[d].keys()
-    ), reverse=True)
+    # 柱状图与折线图保持同一分辨率顺序，避免论文排版时读者在两张图之间来回切换。
+    observed_scales = sorted(set(s for d in datasets for s in results[d].keys()))
+    all_scales = [scale for scale in DEFAULT_SCALE_ORDER if scale in observed_scales]
+    all_scales.extend(scale for scale in observed_scales if scale not in all_scales)
 
     x = np.arange(len(all_scales))
     width = 0.32
     dataset_colors = [PALETTE["blue"], PALETTE["orange"]]
     dataset_labels = {"satellite": "Satellite", "uav": "UAV"}
 
-    fig, ax = plt.subplots(figsize=(5.8, 3.4))
+    fig, ax = plt.subplots(figsize=(5.6, 3.2))
 
     for i, dataset in enumerate(datasets):
         map50_values = [results[dataset].get(s, {}).get("map50", 0) for s in all_scales]

@@ -31,6 +31,23 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from src.utils.plot_utils import setup_plot_style, save_fig, PALETTE, MODEL_COLORS, HATCHES, MARKERS
 from src.utils.logger import get_logger
 
+# 论文中的模型展示顺序固定为检测模型在前、分割模型在后，
+# 这样柱状图、散点图和雷达图都能维持一致的阅读习惯。
+MODEL_ORDER = ["YOLOv8", "YOLOv5", "U-Net", "FCN"]
+
+
+def get_model_names(results: dict) -> list[str]:
+    """按论文展示顺序返回当前结果中实际出现过的模型名称。"""
+    observed = []
+    for dataset_results in results.values():
+        for model_name in dataset_results:
+            if model_name not in observed:
+                observed.append(model_name)
+
+    ordered = [model_name for model_name in MODEL_ORDER if model_name in observed]
+    ordered.extend(model_name for model_name in observed if model_name not in ordered)
+    return ordered
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="多模型对比可视化")
@@ -88,17 +105,13 @@ def plot_metrics_bar(results: dict, output_dir: str) -> None:
     if not datasets:
         return
 
-    all_models = []
-    for dataset in datasets:
-        for model_name in results[dataset]:
-            if model_name not in all_models:
-                all_models.append(model_name)
+    all_models = get_model_names(results)
 
     dataset_labels = {"satellite": "Satellite", "uav": "UAV"}
     x = np.arange(len(datasets))
     width = 0.16 if len(all_models) >= 4 else 0.22
 
-    fig, axes = plt.subplots(2, 2, figsize=(7.2, 5.0), sharey=True)
+    fig, axes = plt.subplots(2, 2, figsize=(7.0, 4.9), sharey=True)
     axes = axes.reshape(-1)
 
     for ax, (metric_key, metric_label) in zip(axes, metrics_to_plot):
@@ -137,8 +150,8 @@ def plot_metrics_bar(results: dict, output_dir: str) -> None:
         ax.set_ylabel("Score")
 
     handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="upper center", ncol=len(all_models), frameon=False, bbox_to_anchor=(0.5, 1.03))
-    fig.tight_layout(rect=[0, 0, 1, 0.95])
+    fig.legend(handles, labels, loc="upper center", ncol=len(all_models), frameon=False, bbox_to_anchor=(0.5, 1.00))
+    fig.tight_layout(rect=[0, 0, 1, 0.94])
 
     out_path = os.path.join(output_dir, "comparison_bar.png")
     save_fig(fig, out_path)
@@ -158,11 +171,15 @@ def plot_speed_accuracy(results: dict, output_dir: str) -> None:
         return
 
     dataset_labels = {"satellite": "Satellite", "uav": "UAV"}
-    fig, ax = plt.subplots(figsize=(5.8, 3.8))
+    all_models = get_model_names(results)
+    fig, ax = plt.subplots(figsize=(5.6, 3.5))
 
     all_fps = []
     for dataset in datasets:
-        for model_name, metrics in results[dataset].items():
+        for model_name in all_models:
+            metrics = results[dataset].get(model_name)
+            if not metrics:
+                continue
             fps = metrics.get("fps", 0)
             map50 = metrics.get("map50", 0)
             params = metrics.get("params_M", 1)
@@ -183,7 +200,7 @@ def plot_speed_accuracy(results: dict, output_dir: str) -> None:
                 f"{model_name}-{dataset_labels.get(dataset, dataset).split()[0]}",
                 (fps, map50),
                 textcoords="offset points",
-                xytext=(4, 3),
+                xytext=(3, 2),
                 fontsize=6.8,
             )
 
@@ -197,7 +214,7 @@ def plot_speed_accuracy(results: dict, output_dir: str) -> None:
     model_handles = [
         plt.Line2D([0], [0], marker="o", color="none", markerfacecolor=MODEL_COLORS.get(m, PALETTE["gray"]),
                    markeredgecolor="#222222", markersize=6, label=m)
-        for m in sorted({m for d in datasets for m in results[d]})
+        for m in all_models
     ]
     dataset_handles = [
         plt.Line2D([0], [0], marker=MARKERS[i % len(MARKERS)], color="#222222", linestyle="none",
@@ -208,7 +225,7 @@ def plot_speed_accuracy(results: dict, output_dir: str) -> None:
     ax.add_artist(first_legend)
     ax.legend(handles=dataset_handles, loc="lower left", frameon=False, title="Dataset", title_fontsize=8)
 
-    fig.tight_layout()
+    fig.tight_layout(pad=0.5)
     out_path = os.path.join(output_dir, "speed_accuracy.png")
     save_fig(fig, out_path)
     plt.close(fig)
@@ -235,7 +252,7 @@ def plot_radar_chart(results: dict, output_dir: str) -> None:
     fig, axes = plt.subplots(
         1,
         len(datasets),
-        figsize=(3.4 * len(datasets), 3.4),
+        figsize=(3.2 * len(datasets), 3.25),
         subplot_kw=dict(polar=True),
     )
     if len(datasets) == 1:
@@ -251,7 +268,10 @@ def plot_radar_chart(results: dict, output_dir: str) -> None:
         max_fps = max(all_fps) if max(all_fps) > 0 else 1
         max_params = max(all_params) if max(all_params) > 0 else 1
 
-        for idx, (model_name, metrics) in enumerate(model_data.items()):
+        for model_name in get_model_names({dataset: model_data}):
+            metrics = model_data.get(model_name)
+            if not metrics:
+                continue
             map50 = metrics.get("map50", 0)
             recall = metrics.get("recall", 0)
             fps_norm = metrics.get("fps", 0) / max_fps
@@ -269,9 +289,9 @@ def plot_radar_chart(results: dict, output_dir: str) -> None:
         ax.set_yticks([0.25, 0.50, 0.75, 1.00])
         ax.set_yticklabels(["", "0.5", "", "1.0"], fontsize=7)
         ax.set_title(dataset_labels.get(dataset, dataset.upper()), pad=10)
-        ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.08), ncol=2, frameon=False, fontsize=7)
+        ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.10), ncol=2, frameon=False, fontsize=7)
 
-    fig.tight_layout()
+    fig.tight_layout(pad=0.5)
     out_path = os.path.join(output_dir, "radar_chart.png")
     save_fig(fig, out_path)
     plt.close(fig)

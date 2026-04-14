@@ -1,5 +1,7 @@
 # 交付记录
 
+> 说明：当前仓库中的论文风格可视化结果，以 `tmp/visual_review_paper_style_20260413/images/results/` 为人工确认后的最终版本，并已同步覆盖到正式 `results/` 目录。
+
 ---
 
 ## 2026-03-18 | P0 + P1：环境配置与数据准备
@@ -126,7 +128,7 @@ python scripts/run_predict.py --dataset satellite \
 
 # 无人机模型预测全部6个位置
 python scripts/run_predict.py --dataset uav \
-    --weights runs/uav/yolov8/uav_yolov8/weights/best.pt
+    --weights runs/uav/yolov8/uav_yolov8_cbam/weights/best.pt
 ```
 
 #### 输出目录
@@ -324,5 +326,33 @@ results/phase3_comparison/
 ├── speed_accuracy.png
 └── radar_chart.png
 ```
+
+---
+
+## 2026-04-14 | P7：UAV CBAM 消融实验与论文图更新（完成）
+
+### 交付文件
+
+| 文件 | 说明 |
+|------|------|
+| `scripts/run_cbam_ablation.py` | 正式的 UAV CBAM 消融实验素材生成脚本，输出汇总表、柱状图与定性对比图 |
+| `src/visualize/plot_resolution_analysis.py` | 收敛为当前论文版式使用的分辨率图顺序与紧凑画布 |
+| `src/visualize/plot_comparison.py` | 收敛为当前论文版式使用的模型顺序、图例布局与紧凑画布 |
+| `results/phase5_cbam_ablation/cbam_ablation_uav.csv` | baseline 与 CBAM 的正式消融汇总表 |
+| `results/phase5_cbam_ablation/cbam_ablation_uav_bar.png` | CBAM 消融定量柱状图 |
+| `results/phase5_cbam_ablation/cbam_ablation_uav_qualitative.png` | GT / baseline / CBAM 定性对比图 |
+
+### 关键结果
+
+| 模型 | Precision | Recall | mAP@0.5 | mAP@0.5:0.95 | F1 | Params(M) | FLOPs(G) | FPS |
+|------|-----------|--------|---------|--------------|----|-----------|----------|-----|
+| YOLOv8n | 0.974 | 0.950 | 0.974 | 0.709 | 0.962 | 3.01 | 8.1 | 58.4 |
+| YOLOv8n + CBAM | **1.000** | **0.964** | **0.987** | **0.801** | **0.982** | 3.20 | 8.3 | 46.9 |
+
+### 本次同步说明
+
+- `tmp/visual_review_paper_style_20260413/images/results/` 中人工确认后的论文风格图，已覆盖同步到正式 `results/` 目录。
+- `results/phase2_resolution/` 与 `results/phase3_comparison/` 下的论文图现以当前手工确认版本为准。
+- `results/phase5_cbam_ablation/` 作为正式补充实验目录，后续论文引用统一从该目录取图取表。
 
 ---

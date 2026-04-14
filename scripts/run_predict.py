@@ -14,7 +14,7 @@ run_predict.py - 批量大图预测一键脚本
 
     python scripts/run_predict.py \
         --dataset uav \
-        --weights runs/uav/yolov8/uav_yolov8/weights/best.pt
+        --weights runs/uav/yolov8/uav_yolov8_cbam/weights/best.pt
 """
 
 from __future__ import annotations

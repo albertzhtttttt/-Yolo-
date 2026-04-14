@@ -28,7 +28,9 @@ bash scripts/install_env.sh
 │   ├── run_data_pipeline.py    # P1 数据准备流水线
 │   ├── run_train_pipeline.py   # P2/P3 训练+评估流水线
 │   ├── run_predict.py          # P4 批量大图预测
-│   └── run_resolution_pipeline.py  # P5 分辨率实验流水线
+│   ├── run_resolution_pipeline.py  # P5 分辨率实验流水线
+│   ├── run_history_predict.py  # 历史时序批量预测
+│   └── run_cbam_ablation.py    # UAV CBAM 消融实验素材生成
 ├── src/
 │   ├── data_preparation/       # 数据预处理、增强、数据集构建
 │   ├── train/                  # 训练脚本（YOLOv8/YOLOv5/U-Net/FCN）
@@ -37,7 +39,7 @@ bash scripts/install_env.sh
 │   └── visualize/              # 可视化
 ├── data/                       # 数据集（不纳入版本控制）
 ├── runs/                       # 训练输出（不纳入版本控制）
-├── results/                    # 实验结果
+├── tmp/                        # 临时脚本、论文拼图草稿与中间结果
 └── vibe-docs/                  # 项目文档
     ├── requirements.md         # 需求文档
     ├── TODO.md                 # 执行计划
@@ -109,6 +111,22 @@ python src/evaluate/compare_models.py --dataset satellite \
     --fcn_weights    runs/satellite/fcn/satellite_fcn/best.pt
 ```
 
+### 补充实验：UAV CBAM 消融
+
+```bash
+python scripts/run_cbam_ablation.py \
+    --baseline_weight runs/uav/yolov8/uav_yolov8/weights/best.pt \
+    --cbam_weight runs/uav/yolov8/uav_yolov8_cbam/weights/best.pt \
+    --device 0
+```
+
+输出：`results/phase5_cbam_ablation/`
+
+说明：
+- 定量结果：`cbam_ablation_uav.csv`
+- 论文柱状图：`cbam_ablation_uav_bar.png/.pdf`
+- 定性对比图：`cbam_ablation_uav_qualitative.png/.pdf`
+
 ---
 
 ## 主要结果
@@ -156,6 +174,18 @@ python src/evaluate/compare_models.py --dataset satellite \
 
 > U-Net/FCN 为分割模型，mAP 通过 mask→bbox 后处理近似计算，仅可作为同一后处理流程下的参考值，不宜与检测模型直接等价比较。
 
+### 补充实验：CBAM 消融（UAV）
+
+| 模型 | Precision | Recall | mAP@0.5 | mAP@0.5:0.95 | F1 | Params(M) | FLOPs(G) | FPS |
+|------|-----------|--------|---------|--------------|----|-----------|----------|-----|
+| YOLOv8n | 0.974 | 0.950 | 0.974 | 0.709 | 0.962 | 3.01 | 8.1 | 58.4 |
+| YOLOv8n + CBAM | **1.000** | **0.964** | **0.987** | **0.801** | **0.982** | 3.20 | 8.3 | 46.9 |
+
+结论：
+- CBAM 在 UAV 测试集上带来稳定增益，其中 `mAP@0.5:0.95` 绝对提升 `0.092`，对论文更有说服力。
+- 代价是参数量由 `3.01M` 增至 `3.20M`，FPS 由 `58.4` 降至 `46.9`，属于可接受的精度-速度折中。
+- 对应图表与汇总表位于 `results/phase5_cbam_ablation/`。
+
 ---
 
 ## 最优模型权重
@@ -163,7 +193,8 @@ python src/evaluate/compare_models.py --dataset satellite \
 | 模型 | 路径 | mAP@0.5 |
 |------|------|---------|
 | YOLOv8 satellite | `runs/satellite/yolov8/satellite_yolov8/weights/best.pt` | 0.418 |
-| YOLOv8 uav (CBAM) | `runs/uav/yolov8/uav_yolov8_cbam/weights/best.pt` | 0.974 |
+| YOLOv8 uav baseline | `runs/uav/yolov8/uav_yolov8/weights/best.pt` | 0.974 |
+| YOLOv8 uav + CBAM | `runs/uav/yolov8/uav_yolov8_cbam/weights/best.pt` | 0.987 |
 | YOLOv5 satellite | `runs/satellite/yolov5/satellite_yolov5n/weights/best.pt` | 0.630 |
 | YOLOv5 uav | `runs/uav/yolov5/uav_yolov5n/weights/best.pt` | 0.986 |
 | U-Net satellite | `runs/satellite/unet/satellite_unet/best.pt` | 0.196 |
