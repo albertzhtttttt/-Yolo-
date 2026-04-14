@@ -34,7 +34,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.predict.predict_geotiff import predict_geotiff
 from src.utils.logger import get_logger
-from src.utils.plot_utils import PALETTE, save_fig, setup_plot_style
+from src.utils.plot_utils import HATCHES, PALETTE, save_fig, setup_plot_style
 
 
 DEFAULT_HISTORY_ROOT = "data/predict/history"
@@ -170,10 +170,10 @@ def plot_temporal_counts(results: list[dict], summary_root: Path) -> Path:
     years = [item["year"] for item in results]
     counts = [item["n_detections"] for item in results]
 
-    fig, ax = plt.subplots(figsize=(11, 5))
-    bars = ax.bar(years, counts, color=PALETTE["teal"], edgecolor="white", linewidth=0.8)
+    fig, ax = plt.subplots(figsize=(6.4, 3.2))
+    bars = ax.bar(years, counts, color=PALETTE["teal"], edgecolor="#222222", linewidth=0.7, hatch=HATCHES[2], alpha=0.92)
 
-    y_offset = max(counts) * 0.01 if counts else 1
+    y_offset = max(counts) * 0.012 if counts else 1
     for bar, count in zip(bars, counts):
         ax.text(
             bar.get_x() + bar.get_width() / 2,
@@ -181,15 +181,15 @@ def plot_temporal_counts(results: list[dict], summary_root: Path) -> Path:
             str(count),
             ha="center",
             va="bottom",
-            fontsize=10,
+            fontsize=7,
         )
 
     ax.set_xlabel("Year")
-    ax.set_ylabel("Number of Detections")
-    ax.set_title("Temporal Detection Count by Year")
-    ax.set_ylim(0, max(counts) * 1.15 if counts else 10)
-    plt.xticks(rotation=20, ha="right")
-    plt.tight_layout()
+    ax.set_ylabel("Number of detections")
+    ax.set_ylim(0, max(counts) * 1.12 if counts else 10)
+    ax.set_xticks(range(len(years)))
+    ax.set_xticklabels(years, rotation=20, ha="right")
+    fig.tight_layout()
 
     out_path = summary_root / "temporal_detection_counts.png"
     save_fig(fig, str(out_path))

@@ -35,7 +35,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.utils.logger import get_logger
-from src.utils.plot_utils import setup_plot_style, save_fig, PALETTE
+from src.utils.plot_utils import setup_plot_style, save_fig, PALETTE, HATCHES
 from src.predict.predict_geotiff import predict_geotiff
 
 
@@ -153,24 +153,25 @@ def plot_summary(results: list, dataset: str, output_root: str) -> None:
     names = [f"Site{i+1}" for i in range(len(results))]
     counts = [r["n_detections"] for r in results]
 
-    fig, ax = plt.subplots(figsize=(10, 5))
-    bars = ax.bar(names, counts, color=PALETTE["blue"], edgecolor="white", linewidth=0.8)
+    fig, ax = plt.subplots(figsize=(5.8, 3.2))
+    bars = ax.bar(names, counts, color=PALETTE["blue"], edgecolor="#222222", linewidth=0.7, hatch=HATCHES[1], alpha=0.92)
 
-    # 在柱顶标注数值
+    # 在柱顶标注数值，字号按论文图表控制，避免插入双栏后拥挤。
+    y_offset = max(counts) * 0.012 if counts else 1
     for bar, count in zip(bars, counts):
         ax.text(
             bar.get_x() + bar.get_width() / 2,
-            bar.get_height() + max(counts) * 0.01,
+            bar.get_height() + y_offset,
             str(count),
-            ha="center", va="bottom", fontsize=10,
+            ha="center", va="bottom", fontsize=7,
         )
 
     ax.set_xlabel("Location")
-    ax.set_ylabel("Number of Detections")
-    ax.set_title(f"Detection Count per Location ({dataset.upper()} Model)")
-    ax.set_ylim(0, max(counts) * 1.15 if counts else 10)
-    plt.xticks(rotation=30, ha="right")
-    plt.tight_layout()
+    ax.set_ylabel("Number of detections")
+    ax.set_ylim(0, max(counts) * 1.12 if counts else 10)
+    ax.set_xticks(range(len(names)))
+    ax.set_xticklabels(names, rotation=20, ha="right")
+    fig.tight_layout()
 
     out_path = os.path.join(output_root, dataset, "summary_bar.png")
     save_fig(fig, out_path)

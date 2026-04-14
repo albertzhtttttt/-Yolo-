@@ -28,7 +28,7 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.utils.plot_utils import setup_plot_style, save_fig, PALETTE, SCALE_COLORS
+from src.utils.plot_utils import setup_plot_style, save_fig, PALETTE, LINE_STYLES, MARKERS, HATCHES
 from src.utils.logger import get_logger
 
 
@@ -78,60 +78,67 @@ def load_metrics(csv_path: str) -> dict:
 def plot_metrics_by_scale(results: dict, output_dir: str) -> None:
     """
     绘制各指标随分辨率变化的折线图。
-    卫星和无人机数据集并排显示（2行×4列）。
+    论文版式采用 2×2 子图，每个子图同时展示卫星与无人机，便于横向比较和单栏/双栏排版。
     """
     setup_plot_style()
 
     metrics_to_plot = [
-        ("map50",     "mAP@0.5",   PALETTE["blue"]),
-        ("precision", "Precision", PALETTE["orange"]),
-        ("recall",    "Recall",    PALETTE["green"]),
-        ("f1",        "F1 Score",  PALETTE["purple"]),
+        ("map50",     "mAP@0.5"),
+        ("precision", "Precision"),
+        ("recall",    "Recall"),
+        ("f1",        "F1 score"),
     ]
 
     datasets = sorted(results.keys())
-    n_datasets = len(datasets)
-    n_metrics = len(metrics_to_plot)
-
-    if n_datasets == 0:
+    if not datasets:
         print("[plot_resolution] 无数据，跳过绘图")
         return
 
-    fig, axes = plt.subplots(n_datasets, n_metrics,
-                             figsize=(n_metrics * 4, n_datasets * 3.5))
-    if n_datasets == 1:
-        axes = axes.reshape(1, -1)
-    if n_metrics == 1:
-        axes = axes.reshape(-1, 1)
+    dataset_colors = {
+        "satellite": PALETTE["blue"],
+        "uav": PALETTE["orange"],
+    }
+    dataset_labels = {
+        "satellite": "Satellite",
+        "uav": "UAV",
+    }
 
-    fig.suptitle("Detection Performance vs. Image Resolution", fontsize=14, fontweight="bold")
+    fig, axes = plt.subplots(2, 2, figsize=(7.2, 5.2), sharex=True, sharey=True)
+    axes = axes.reshape(-1)
 
-    for row_idx, dataset in enumerate(datasets):
-        scale_data = results[dataset]
-        scales = sorted(scale_data.keys(), reverse=True)  # 100, 75, 50, 25
-        x = [s for s in scales]
+    for ax, (metric_key, metric_label) in zip(axes, metrics_to_plot):
+        for idx, dataset in enumerate(datasets):
+            scale_data = results[dataset]
+            scales = sorted(scale_data.keys(), reverse=True)
+            values = [scale_data[s][metric_key] for s in scales]
+            ax.plot(
+                scales,
+                values,
+                color=dataset_colors.get(dataset, PALETTE["gray"]),
+                linestyle=LINE_STYLES[idx % len(LINE_STYLES)],
+                marker=MARKERS[idx % len(MARKERS)],
+                linewidth=1.6,
+                markersize=4.5,
+                markerfacecolor="white",
+                markeredgewidth=1.0,
+                label=dataset_labels.get(dataset, dataset.upper()),
+            )
 
-        for col_idx, (metric_key, metric_label, color) in enumerate(metrics_to_plot):
-            ax = axes[row_idx][col_idx]
-            y = [scale_data[s][metric_key] for s in scales]
+        ax.set_title(metric_label, pad=4)
+        ax.set_xticks([100, 75, 50, 25])
+        ax.set_xticklabels(["100", "75", "50", "25"])
+        ax.set_ylim(0, 1.02)
+        ax.invert_xaxis()
 
-            ax.plot(x, y, color=color, marker="o", linewidth=2, markersize=6)
+    for ax in axes[::2]:
+        ax.set_ylabel("Score")
+    for ax in axes[-2:]:
+        ax.set_xlabel("Resolution scale (%)")
 
-            # 标注数值
-            for xi, yi in zip(x, y):
-                ax.annotate(f"{yi:.3f}", (xi, yi),
-                            textcoords="offset points", xytext=(0, 8),
-                            ha="center", fontsize=8)
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper center", ncol=len(labels), frameon=False, bbox_to_anchor=(0.5, 1.02))
+    fig.tight_layout(rect=[0, 0, 1, 0.96])
 
-            ax.set_xlabel("Resolution (%)")
-            ax.set_ylabel(metric_label)
-            ax.set_title(f"{dataset.upper()} - {metric_label}")
-            ax.set_xticks(x)
-            ax.set_xticklabels([f"{s}%" for s in x])
-            ax.set_ylim(0, 1.1)
-            ax.invert_xaxis()  # 从高分辨率到低分辨率
-
-    plt.tight_layout()
     out_path = os.path.join(output_dir, "resolution_analysis.png")
     save_fig(fig, out_path)
     plt.close(fig)
@@ -141,6 +148,7 @@ def plot_metrics_by_scale(results: dict, output_dir: str) -> None:
 def plot_scale_comparison_bar(results: dict, output_dir: str) -> None:
     """
     绘制各分辨率 mAP@0.5 对比柱状图（卫星和无人机并排）。
+    使用 hatch 纹理辅助区分，避免论文黑白打印时信息丢失。
     """
     setup_plot_style()
 
@@ -148,40 +156,50 @@ def plot_scale_comparison_bar(results: dict, output_dir: str) -> None:
     if not datasets:
         return
 
-    # 获取所有分辨率级别
     all_scales = sorted(set(
         s for d in datasets for s in results[d].keys()
     ), reverse=True)
 
     x = np.arange(len(all_scales))
-    width = 0.35
+    width = 0.32
     dataset_colors = [PALETTE["blue"], PALETTE["orange"]]
+    dataset_labels = {"satellite": "Satellite", "uav": "UAV"}
 
-    fig, ax = plt.subplots(figsize=(10, 5))
+    fig, ax = plt.subplots(figsize=(5.8, 3.4))
 
     for i, dataset in enumerate(datasets):
         map50_values = [results[dataset].get(s, {}).get("map50", 0) for s in all_scales]
         offset = (i - len(datasets) / 2 + 0.5) * width
-        bars = ax.bar(x + offset, map50_values, width,
-                      label=dataset.upper(), color=dataset_colors[i % len(dataset_colors)],
-                      edgecolor="white", linewidth=0.8)
-        # 标注数值
+        bars = ax.bar(
+            x + offset,
+            map50_values,
+            width,
+            label=dataset_labels.get(dataset, dataset.upper()),
+            color=dataset_colors[i % len(dataset_colors)],
+            edgecolor="#222222",
+            linewidth=0.7,
+            hatch=HATCHES[i % len(HATCHES)],
+            alpha=0.92,
+        )
         for bar, val in zip(bars, map50_values):
             if val > 0:
-                ax.text(bar.get_x() + bar.get_width() / 2,
-                        bar.get_height() + 0.01,
-                        f"{val:.3f}", ha="center", va="bottom", fontsize=8)
+                ax.text(
+                    bar.get_x() + bar.get_width() / 2,
+                    bar.get_height() + 0.018,
+                    f"{val:.3f}",
+                    ha="center",
+                    va="bottom",
+                    fontsize=7,
+                )
 
-    ax.set_xlabel("Resolution (%)")
+    ax.set_xlabel("Resolution scale (%)")
     ax.set_ylabel("mAP@0.5")
-    ax.set_title("mAP@0.5 vs. Resolution")
     ax.set_xticks(x)
-    ax.set_xticklabels([f"{s}%" for s in all_scales])
-    ax.set_ylim(0, 1.15)
-    ax.legend()
-    ax.axhline(0.70, color="red", linestyle="--", alpha=0.5, label="Threshold (0.70)")
+    ax.set_xticklabels([str(s) for s in all_scales])
+    ax.set_ylim(0, 1.06)
+    ax.legend(loc="upper center", ncol=len(datasets), bbox_to_anchor=(0.5, 1.16), frameon=False)
 
-    plt.tight_layout()
+    fig.tight_layout()
     out_path = os.path.join(output_dir, "resolution_map50_bar.png")
     save_fig(fig, out_path)
     plt.close(fig)

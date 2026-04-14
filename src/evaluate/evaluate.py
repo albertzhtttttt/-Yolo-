@@ -98,45 +98,48 @@ def plot_training_curves(results_csv: str, out_dir: str) -> None:
     epochs = df["epoch"].tolist() if "epoch" in df.columns else list(range(len(df)))
 
     setup_plot_style()
-    fig, axes = plt.subplots(2, 3, figsize=(18, 10))
-    fig.suptitle("Training Curves", fontsize=15, fontweight="bold")
+    fig, axes = plt.subplots(2, 2, figsize=(7.2, 5.0))
+    axes = axes.reshape(-1)
 
     # ── 列名映射（Ultralytics 8.x 格式）──────────────────────────────────────
+    # 论文版训练曲线只保留最能说明收敛过程的 4 个面板，减少 2×3 大图在论文中的留白。
     col_map = {
-        "train/box_loss":  ("Train Box Loss",   PALETTE["blue"],   axes[0][0]),
-        "train/cls_loss":  ("Train Cls Loss",   PALETTE["orange"], axes[0][1]),
-        "train/dfl_loss":  ("Train DFL Loss",   PALETTE["green"],  axes[0][2]),
-        "metrics/mAP50(B)":    ("mAP@0.5",        PALETTE["blue"],   axes[1][0]),
-        "metrics/mAP50-95(B)": ("mAP@0.5:0.95",   PALETTE["orange"], axes[1][1]),
-        "val/box_loss":    ("Val Box Loss",   PALETTE["red"],    axes[1][2]),
+        "train/box_loss":       ("Train box loss", PALETTE["blue"],   axes[0]),
+        "val/box_loss":         ("Val box loss",   PALETTE["red"],    axes[1]),
+        "metrics/mAP50(B)":     ("mAP@0.5",        PALETTE["green"],  axes[2]),
+        "metrics/mAP50-95(B)":  ("mAP@0.5:0.95",   PALETTE["orange"], axes[3]),
     }
 
     for col, (title, color, ax) in col_map.items():
         if col in df.columns:
-            ax.plot(epochs, df[col].tolist(), color=color, linewidth=2)
-            # 标注最优点
+            ax.plot(epochs, df[col].tolist(), color=color, linewidth=1.5)
             if "mAP" in col:
                 best_idx = df[col].idxmax()
-                ax.scatter(epochs[best_idx], df[col][best_idx],
-                           color="red", s=60, zorder=5,
-                           label=f"Best={df[col][best_idx]:.4f} (epoch {epochs[best_idx]+1})")
-                ax.legend(fontsize=9)
+                ax.scatter(
+                    epochs[best_idx],
+                    df[col][best_idx],
+                    color=PALETTE["red"],
+                    edgecolor="#222222",
+                    linewidth=0.5,
+                    s=22,
+                    zorder=5,
+                    label=f"best={df[col][best_idx]:.3f}",
+                )
+                ax.legend(loc="lower right", frameon=False)
             ax.set_xlabel("Epoch")
-            ax.set_title(title)
+            ax.set_title(title, pad=4)
         else:
-            ax.set_title(f"{title} (N/A)")
+            ax.set_title(f"{title} (N/A)", pad=4)
             ax.text(0.5, 0.5, "N/A", ha="center", va="center",
-                    transform=ax.transAxes, fontsize=14, color="gray")
+                    transform=ax.transAxes, fontsize=9, color="gray")
 
-    # 同时在 mAP 图上叠加 val loss（双 y 轴）
-    if "val/box_loss" in df.columns and "metrics/mAP50(B)" in df.columns:
-        ax2 = axes[1][0].twinx()
-        ax2.plot(epochs, df["val/box_loss"].tolist(),
-                 color=PALETTE["red"], linewidth=1.5, linestyle="--", alpha=0.6, label="val box_loss")
-        ax2.set_ylabel("Val Box Loss", color=PALETTE["red"])
-        ax2.tick_params(axis="y", labelcolor=PALETTE["red"])
+    for ax in axes[:2]:
+        ax.set_ylabel("Loss")
+    for ax in axes[2:]:
+        ax.set_ylabel("Score")
+        ax.set_ylim(0, 1.02)
 
-    plt.tight_layout()
+    fig.tight_layout()
     save_fig(fig, os.path.join(out_dir, "training_curves.png"))
     plt.close(fig)
     print(f"[evaluate] 训练曲线已保存：{out_dir}/training_curves.png")

@@ -25,20 +25,25 @@ import numpy as np
 # 全局常量
 # =============================================================================
 
-# 图表保存 DPI（≥300 满足论文要求）
-SAVE_DPI = 300
+# 图表保存 DPI：论文投稿通常要求 ≥300 dpi，这里使用 600 dpi 便于双栏缩放后仍保持清晰。
+SAVE_DPI = 600
 
-# 统一调色板（色盲友好配色）
+# 统一调色板：采用 Okabe-Ito 色盲友好配色，避免高饱和商业风配色影响论文观感。
 PALETTE = {
-    "blue":    "#2196F3",
-    "orange":  "#FF9800",
-    "green":   "#4CAF50",
-    "red":     "#F44336",
-    "purple":  "#9C27B0",
-    "teal":    "#009688",
-    "gray":    "#607D8B",
-    "yellow":  "#FFC107",
+    "blue":    "#0072B2",
+    "orange":  "#E69F00",
+    "green":   "#009E73",
+    "red":     "#D55E00",
+    "purple":  "#CC79A7",
+    "teal":    "#56B4E9",
+    "gray":    "#4D4D4D",
+    "yellow":  "#F0E442",
 }
+
+# 论文图中不能只依赖颜色区分曲线/柱子，因此统一准备线型、标记和 hatch 纹理。
+LINE_STYLES = ["-", "--", "-.", ":"]
+MARKERS = ["o", "s", "^", "D", "v", "P"]
+HATCHES = ["", "//", "\\\\", "xx", "..", "++"]
 
 # 模型对应颜色（对比实验用）
 MODEL_COLORS = {
@@ -112,69 +117,99 @@ def _find_chinese_font() -> str | None:
     return None
 
 
-def setup_plot_style(font_size: int = 12) -> None:
+def setup_plot_style(font_size: int = 9) -> None:
     """
-    配置全局 matplotlib 绘图风格，支持中文字体。
+    配置全局 matplotlib 绘图风格，面向计算机视觉论文双栏排版。
 
     参数：
-        font_size: 基础字号，默认 12
+        font_size: 基础字号，默认 9；接近 CVPR 等模板的图注字号，缩放到单栏后仍可读。
 
     使用方式：
-        在任何绘图脚本开头调用一次 setup_plot_style()
+        在任何绘图脚本开头调用一次 setup_plot_style()，随后所有图表继承统一论文风格。
     """
-    # 查找中文字体
+    # 查找中文字体；若没有中文字体，则优先使用论文常见的 serif 字体，保证英文图表观感统一。
     chinese_font_path = _find_chinese_font()
 
     if chinese_font_path:
         try:
             prop = fm.FontProperties(fname=chinese_font_path)
             font_name = prop.get_name()
-            plt.rcParams["font.family"] = ["sans-serif"]
+            plt.rcParams["font.family"] = ["serif"]
+            plt.rcParams["font.serif"] = ["Times New Roman", "Times", "DejaVu Serif", font_name]
             plt.rcParams["font.sans-serif"] = [font_name, "DejaVu Sans"]
             print(f"[plot_utils] 已加载中文字体：{font_name}")
         except Exception:
             chinese_font_path = None
 
     if not chinese_font_path:
-        # 未找到中文字体，使用默认字体（中文可能显示为方块，但不报错）
+        # 服务器没有中文字体时仍使用 serif 英文字体；当前图表标签尽量保持英文以避免乱码。
         print("[plot_utils] 警告：未找到中文字体，中文可能无法正常显示。")
         print("  建议安装：sudo apt install fonts-wqy-microhei")
+        plt.rcParams["font.family"] = ["serif"]
+        plt.rcParams["font.serif"] = ["Times New Roman", "Times", "DejaVu Serif"]
         plt.rcParams["font.sans-serif"] = ["DejaVu Sans"]
 
-    # 解决负号显示问题
+    # 解决负号显示问题，并让矢量图保留可编辑文本，便于后续论文排版。
     plt.rcParams["axes.unicode_minus"] = False
+    plt.rcParams["pdf.fonttype"] = 42
+    plt.rcParams["ps.fonttype"] = 42
+    plt.rcParams["svg.fonttype"] = "none"
 
-    # 全局字号与风格
+    # 全局字号与风格：弱化网格和装饰，强调数据线条，确保黑白打印也能区分。
     plt.rcParams.update({
         "font.size":        font_size,
-        "axes.titlesize":   font_size + 2,
+        "axes.titlesize":   font_size + 1,
         "axes.labelsize":   font_size,
         "xtick.labelsize":  font_size - 1,
         "ytick.labelsize":  font_size - 1,
         "legend.fontsize":  font_size - 1,
-        "figure.dpi":       100,          # 屏幕显示 DPI（保存时另设）
-        "savefig.dpi":      SAVE_DPI,     # 保存 DPI
-        "savefig.bbox":     "tight",      # 自动裁边
-        "axes.spines.top":    False,      # 去掉上边框
-        "axes.spines.right":  False,      # 去掉右边框
-        "axes.grid":          True,       # 默认显示网格
-        "grid.alpha":         0.3,
-        "lines.linewidth":    2.0,
-        "patch.linewidth":    1.5,
+        "figure.dpi":       150,
+        "savefig.dpi":      SAVE_DPI,
+        "savefig.bbox":     "tight",
+        "savefig.pad_inches": 0.02,
+        "figure.facecolor": "white",
+        "axes.facecolor":   "white",
+        "axes.edgecolor":   "#222222",
+        "axes.linewidth":   0.8,
+        "axes.spines.top":    False,
+        "axes.spines.right":  False,
+        "axes.grid":          True,
+        "axes.axisbelow":     True,
+        "grid.color":         "#D0D0D0",
+        "grid.alpha":         0.45,
+        "grid.linewidth":     0.45,
+        "grid.linestyle":     "--",
+        "lines.linewidth":    1.6,
+        "lines.markersize":   4.5,
+        "patch.linewidth":    0.8,
+        "legend.frameon":     False,
+        "legend.handlelength": 1.8,
+        "xtick.direction":    "out",
+        "ytick.direction":    "out",
+        "xtick.major.size":   3,
+        "ytick.major.size":   3,
     })
 
 
 def save_fig(fig: plt.Figure, path: str, dpi: int = SAVE_DPI) -> None:
     """
-    保存图表到指定路径，自动创建目录。
+    保存图表到指定路径，自动创建目录，并同步导出 PDF 矢量版本。
 
     参数：
         fig:  matplotlib Figure 对象
         path: 输出文件路径（支持 .png / .pdf / .svg）
-        dpi:  保存分辨率，默认 300
+        dpi:  位图保存分辨率，默认 600，满足论文印刷和缩放需求
     """
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-    fig.savefig(path, dpi=dpi, bbox_inches="tight")
+    fig.savefig(path, dpi=dpi, bbox_inches="tight", pad_inches=0.02)
+
+    # 论文排版优先使用矢量图；调用方仍拿 PNG 预览，PDF 供后续插入论文。
+    base, ext = os.path.splitext(path)
+    if ext.lower() != ".pdf":
+        pdf_path = base + ".pdf"
+        fig.savefig(pdf_path, bbox_inches="tight", pad_inches=0.02)
+        print(f"[plot_utils] 已保存：{pdf_path}")
+
     print(f"[plot_utils] 已保存：{path}")
 
 
@@ -302,14 +337,20 @@ def draw_pr_curve(
         legend_label = label
         if ap_values is not None:
             legend_label += f" (AP={ap_values[i]:.3f})"
-        ax.plot(r, p, color=colors[i % len(colors)], label=legend_label, linewidth=2)
+        ax.plot(
+            r, p,
+            color=colors[i % len(colors)],
+            linestyle=LINE_STYLES[i % len(LINE_STYLES)],
+            label=legend_label,
+            linewidth=1.6,
+        )
 
-    ax.set_xlim([0.0, 1.01])
-    ax.set_ylim([0.0, 1.05])
+    ax.set_xlim([0.0, 1.0])
+    ax.set_ylim([0.0, 1.02])
     ax.set_xlabel("Recall")
     ax.set_ylabel("Precision")
-    ax.set_title(title)
-    ax.legend(loc="lower left")
+    ax.set_title(title, pad=4)
+    ax.legend(loc="lower left", frameon=False)
 
     return ax
 

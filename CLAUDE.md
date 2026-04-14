@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-YOLOv8-based forest gap detection system for high-resolution remote sensing imagery (satellite + UAV). Six-phase pipeline: data preparation → training → evaluation → large GeoTIFF prediction → resolution analysis → multi-model comparison.
+YOLOv8-based forest gap detection system for high-resolution remote sensing imagery (satellite + UAV). The core workflow covers data preparation → training → evaluation → large GeoTIFF prediction → resolution analysis → multi-model comparison, and the repository also includes historical temporal prediction for archived satellite imagery.
 
 **Server**: All training and heavy computation runs on `lfy@172.31.226.112`, project path `/home6/zht/-Yolo-`, conda env `forest_gap`. See memory files for SSH/SCP patterns.
 
@@ -28,6 +28,9 @@ python src/evaluate/evaluate.py --dataset satellite \
 ```bash
 python scripts/run_predict.py --dataset satellite \
     --weights runs/satellite/yolov8/satellite_yolov8/weights/best.pt
+
+python scripts/run_predict.py --dataset uav \
+    --weights runs/uav/yolov8/uav_yolov8_cbam/weights/best.pt
 ```
 
 ### Resolution Analysis (P5)
@@ -48,6 +51,13 @@ python src/evaluate/compare_models.py --dataset satellite \
     --fcn_weights    runs/satellite/fcn/satellite_fcn/best.pt
 ```
 
+### Historical Temporal Prediction
+```bash
+python scripts/run_history_predict.py \
+    --weights runs/satellite/yolov8/satellite_yolov8/weights/best.pt \
+    --device 0
+```
+
 ## Architecture
 
 ### Data Flow
@@ -59,25 +69,31 @@ Original Data (satellite 256×256 / UAV variable)
   → Train → best.pt
   → Evaluate (metrics/curves/confusion matrix)
   → Predict on large GeoTIFF (windowed reading) → KML/SHP
+  → Optional temporal batch prediction on archived GeoTIFFs
 ```
 
 ### Configuration-Driven Design
-All hyperparameters live in `configs/{satellite,uav,predict}_config.yaml`. Scripts load these configs and allow CLI overrides. Never hardcode paths or hyperparameters — add them to the YAML configs.
+Core hyperparameters live in `configs/{satellite,uav,predict}_config.yaml`, while the UAV CBAM architecture is defined in `configs/yolov8_gap_cbam_p2.yaml`. Scripts load these configs and allow CLI overrides. Never hardcode reusable paths or hyperparameters — add them to the YAML configs.
 
 ### Key Design Patterns
-- **Windowed GeoTIFF reading**: `src/predict/predict_geotiff.py` uses `rasterio` for images up to 28928×51200 px to avoid OOM. Always use windowed reading for large TIFs.
+- **Windowed GeoTIFF reading**: `src/predict/predict_geotiff.py` uses `rasterio` windowed reading for very large TIFs and should reuse a single opened dataset handle per image whenever possible.
+- **Geo-reference precedence**: Prediction should prefer embedded GeoTIFF `transform` / `crs`; fall back to external `.tfw` / `.prj` only when embedded spatial reference is unavailable.
+- **Custom CBAM registration**: `src/train/yolo_model_loader.py` registers `CBAM`, `ChannelAttention`, and `SpatialAttention` into Ultralytics runtime so custom YAML structures and CBAM weights can be loaded consistently in training, evaluation, and prediction.
 - **Pipeline orchestration**: `scripts/run_*.py` call subprocesses in sequence with error handling. Each phase is independently re-runnable.
-- **GPU selection**: Pass `--device 0/1/2` to training scripts. The train scripts auto-detect free GPUs if not specified.
-- **Single class**: All models detect only one class — `gap` (林窗). Class index is always 0.
+- **GPU selection**: Pass `--device 0/1/2` to training or prediction scripts. Heavy jobs are expected to run on the remote server.
+- **Single class**: All models detect only one class — `gap` (林窗). Class index is always `0`.
 - **Offline augmentation**: Augmentation is applied before training (generates new image files), not via Ultralytics' online augmentation.
+- **Temporal batch prediction**: `scripts/run_history_predict.py` scans `data/predict/history/<date>/Level18/` directories and writes per-year outputs plus summary charts.
 
 ### Module Responsibilities
 | Module | Purpose |
 |--------|---------|
 | `src/data_preparation/` | Preprocessing, slicing, augmentation, dataset building, mask conversion |
 | `src/train/` | YOLOv8, YOLOv5, U-Net, FCN training scripts |
+| `src/train/yolo_model_loader.py` | Runtime CBAM registration and unified loading for custom YOLO models |
 | `src/evaluate/` | YOLOv8 evaluation + multi-model comparison metrics |
-| `src/predict/predict_geotiff.py` | Windowed inference on large GeoTIFFs, outputs KML/SHP with geo-coordinates |
+| `src/predict/predict_geotiff.py` | Windowed inference on large GeoTIFFs, prefers embedded spatial reference, outputs KML/SHP |
+| `scripts/run_history_predict.py` | Historical temporal GeoTIFF batch prediction and yearly summaries |
 | `src/visualize/` | Resolution analysis charts, model comparison plots |
 | `src/utils/logger.py` | Unified logging (timestamp + console + file) |
 | `src/utils/plot_utils.py` | Matplotlib styling, color-blind-friendly palette |
@@ -88,8 +104,10 @@ All hyperparameters live in `configs/{satellite,uav,predict}_config.yaml`. Scrip
 - `results/phase1_predict/` — KML/SHP prediction outputs per location
 - `results/phase2_resolution/` — resolution analysis charts
 - `results/phase3_comparison/` — multi-model comparison outputs
+- `results/phase4_temporal/predictions/` — per-year temporal prediction outputs
+- `results/phase4_temporal/summaries/` — temporal CSV and charts
 - `logs/` — pipeline execution logs
 
 ### Best Model Weights
 - Satellite YOLOv8: `runs/satellite/yolov8/satellite_yolov8/weights/best.pt` (mAP@0.5=0.418)
-- UAV YOLOv8: `runs/uav/yolov8/uav_yolov8/weights/best.pt` (mAP@0.5=0.974)
+- UAV YOLOv8 + CBAM: `runs/uav/yolov8/uav_yolov8_cbam/weights/best.pt` (mAP@0.5=0.974)
