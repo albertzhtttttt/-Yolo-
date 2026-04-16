@@ -53,12 +53,15 @@ MODEL_COLORS = {
     "FCN":     PALETTE["red"],
 }
 
-# 分辨率等级颜色
+# 分辨率等级颜色。当前默认分辨率实验扩展为 6 档，按从高到低逐步增强暖色，
+# 便于在论文里直观表达“分辨率越低，退化越强”。
 SCALE_COLORS = {
-    100: PALETTE["blue"],
-    75:  PALETTE["teal"],
-    50:  PALETTE["orange"],
-    25:  PALETTE["red"],
+    100:   PALETTE["blue"],
+    50:    PALETTE["teal"],
+    25:    PALETTE["green"],
+    12.5:  PALETTE["orange"],
+    6.25:  PALETTE["red"],
+    3.125: PALETTE["purple"],
 }
 
 
@@ -350,7 +353,8 @@ def draw_pr_curve(
     ax.set_xlabel("Recall")
     ax.set_ylabel("Precision")
     ax.set_title(title, pad=4)
-    ax.legend(loc="lower left", frameon=False)
+    # PR 曲线图例放在图外顶部，避免遮挡低召回或低精度区间的曲线。
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, 1.12), frameon=False)
 
     return ax
 

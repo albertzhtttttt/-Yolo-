@@ -30,6 +30,10 @@ evaluate.py - 模型评估脚本
         └── ...
 """
 
+from __future__ import annotations
+
+# 远端实验室服务器当前使用 Python 3.8，这里延迟解析类型注解，
+# 以兼容 tuple[str, str] 等现代写法，避免分辨率实验评估阶段在导入时直接报错。
 import argparse
 import os
 import random
@@ -62,6 +66,8 @@ def parse_args():
     parser.add_argument("--dataset",  type=str, choices=["satellite", "uav"], required=True)
     parser.add_argument("--weights",  type=str, required=True, help="模型权重路径（best.pt）")
     parser.add_argument("--config",   type=str, help="配置文件路径（默认自动推断）")
+    parser.add_argument("--data",     type=str, default=None,
+                        help="覆盖 dataset.yaml 路径（用于分辨率实验等场景）")
     parser.add_argument("--conf",     type=float, default=0.25, help="置信度阈值")
     parser.add_argument("--iou",      type=float, default=0.45, help="NMS IoU 阈值")
     parser.add_argument("--vis_n",    type=int,   default=20,   help="可视化预测结果的图像数量")
@@ -125,7 +131,8 @@ def plot_training_curves(results_csv: str, out_dir: str) -> None:
                     zorder=5,
                     label=f"best={df[col][best_idx]:.3f}",
                 )
-                ax.legend(loc="lower right", frameon=False)
+                # 图例只说明最优点数值，放在子图外侧避免遮挡曲线。
+                ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.18), frameon=False)
             ax.set_xlabel("Epoch")
             ax.set_title(title, pad=4)
         else:
@@ -139,7 +146,7 @@ def plot_training_curves(results_csv: str, out_dir: str) -> None:
         ax.set_ylabel("Score")
         ax.set_ylim(0, 1.02)
 
-    fig.tight_layout()
+    fig.tight_layout(rect=[0, 0.04, 1, 1])
     save_fig(fig, os.path.join(out_dir, "training_curves.png"))
     plt.close(fig)
     print(f"[evaluate] 训练曲线已保存：{out_dir}/training_curves.png")
@@ -171,12 +178,16 @@ def run_val(model, dataset_yaml: str, conf: float, iou: float, logger) -> dict:
     """
     logger.info(f"在 test 集上评估（conf={conf}, iou={iou}）...")
 
+    # 远端服务器在多次重复 val() 时，DataLoader 多进程析构偶发触发
+    # "can only test a child process"，这里统一改为 workers=0，
+    # 保证分辨率实验长链路评估稳定完成。
     results = model.val(
         data=dataset_yaml,
         split="test",
         conf=conf,
         iou=iou,
         verbose=True,
+        workers=0,
     )
 
     # 从 results 对象提取指标
@@ -246,6 +257,7 @@ def plot_confusion_matrix_from_val(model, dataset_yaml: str, conf: float,
         iou=iou,
         plots=True,
         save_dir=os.path.join(out_dir, "_tmp_val"),
+        workers=0,
     )
 
     # 尝试从 results 对象获取混淆矩阵数组
@@ -311,6 +323,7 @@ def plot_pr_f1_curves(model, dataset_yaml: str, conf_range: np.ndarray,
             iou=iou,
             verbose=False,
             plots=False,
+            workers=0,
         )
         m = results.results_dict
         p  = float(m.get("metrics/precision(B)", 0))
@@ -331,7 +344,7 @@ def plot_pr_f1_curves(model, dataset_yaml: str, conf_range: np.ndarray,
         ax=ax,
         title="Precision-Recall Curve",
     )
-    plt.tight_layout()
+    plt.tight_layout(rect=[0, 0, 1, 0.94])
     save_fig(fig, os.path.join(out_dir, "pr_curve.png"))
     plt.close(fig)
 
@@ -348,8 +361,9 @@ def plot_pr_f1_curves(model, dataset_yaml: str, conf_range: np.ndarray,
     ax.set_title("F1-Confidence Curve")
     ax.set_xlim([0, 1])
     ax.set_ylim([0, 1.05])
-    ax.legend()
-    plt.tight_layout()
+    # 图例移到图外，避免覆盖最佳阈值附近的曲线。
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, 1.12), frameon=False)
+    plt.tight_layout(rect=[0, 0, 1, 0.94])
     save_fig(fig, os.path.join(out_dir, "f1_curve.png"))
     plt.close(fig)
 
@@ -459,15 +473,53 @@ def visualize_predictions(
             mpatches.Patch(edgecolor="red",    facecolor="none", linestyle="--", label=f"GT ({len(gt_boxes)})"),
             mpatches.Patch(edgecolor="#00E676", facecolor="none", label=f"Pred ({len(pred_boxes)})"),
         ]
-        ax.legend(handles=legend_elements, loc="upper right", fontsize=9)
+        # 图例放在图像外侧上方，避免遮挡真实目标或预测框。
+        ax.legend(handles=legend_elements, loc="upper center", bbox_to_anchor=(0.5, 1.06), ncol=2, fontsize=9, frameon=False)
         ax.set_title(f"{img_name}", fontsize=10)
         ax.axis("off")
 
-        plt.tight_layout()
+        plt.tight_layout(rect=[0, 0, 1, 0.96])
         save_fig(fig, os.path.join(out_dir, f"pred_{idx+1:03d}_{stem}.png"))
         plt.close(fig)
 
     print(f"[evaluate] 预测可视化已保存：{out_dir}（共 {len(selected)} 张）")
+
+
+def resolve_test_dirs(dataset_yaml: str, cfg: dict) -> tuple[str, str]:
+    """
+    根据 dataset.yaml 解析测试集图像目录与标签目录。
+
+    参数：
+        dataset_yaml: 当前评估使用的 YOLO dataset.yaml，可指向分辨率实验数据集
+        cfg:          原始配置文件内容，用作兼容回退
+
+    返回值：
+        (test_img_dir, test_lbl_dir)，供预测可视化读取对应分辨率的测试图像与标签。
+    """
+    with open(dataset_yaml, "r", encoding="utf-8") as f:
+        dataset_cfg = yaml.safe_load(f) or {}
+
+    base_path = Path(dataset_cfg.get("path") or Path(dataset_yaml).parent)
+    test_entry = dataset_cfg.get("test", "images/test")
+
+    if isinstance(test_entry, list):
+        # 当前项目 dataset.yaml 使用字符串路径；若未来改成列表，则回退到原配置路径，避免误判。
+        test_img_dir = Path(cfg["data"]["output_dir"]) / "images" / "test"
+    else:
+        test_img_dir = Path(test_entry)
+        if not test_img_dir.is_absolute():
+            test_img_dir = base_path / test_img_dir
+
+    parts = list(test_img_dir.parts)
+    if "images" in parts:
+        # YOLO 数据集采用 images/test 与 labels/test 平行目录结构，替换最后一个 images 片段即可。
+        images_idx = len(parts) - 1 - parts[::-1].index("images")
+        parts[images_idx] = "labels"
+        test_lbl_dir = Path(*parts)
+    else:
+        test_lbl_dir = Path(cfg["data"]["output_dir"]) / "labels" / "test"
+
+    return str(test_img_dir), str(test_lbl_dir)
 
 
 # =============================================================================
@@ -502,8 +554,9 @@ def main():
         use_pretrained=False,
         logger=logger,
     )
-    dataset_yaml  = cfg["data"]["dataset_yaml"]
+    dataset_yaml  = args.data or cfg["data"]["dataset_yaml"]
     class_names   = cfg["classes"]["names"]
+    logger.info(f"数据集配置：{dataset_yaml}")
 
     # ── 1. 训练曲线 ───────────────────────────────────────────────────────────
     # 自动查找 results.csv（从权重路径推断）
@@ -537,8 +590,7 @@ def main():
     plot_pr_f1_curves(model, dataset_yaml, conf_range, args.iou, out_dir, class_names)
 
     # ── 5. 测试集预测可视化 ───────────────────────────────────────────────────
-    test_img_dir = os.path.join(cfg["data"]["output_dir"], "images", "test")
-    test_lbl_dir = os.path.join(cfg["data"]["output_dir"], "labels", "test")
+    test_img_dir, test_lbl_dir = resolve_test_dirs(dataset_yaml, cfg)
     pred_out_dir = os.path.join(out_dir, "predictions")
 
     visualize_predictions(

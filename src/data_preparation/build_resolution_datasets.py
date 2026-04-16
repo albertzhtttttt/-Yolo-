@@ -4,26 +4,29 @@ build_resolution_datasets.py - 多分辨率数据集构建脚本
 
 功能：
     对已有的 YOLO 数据集（train/val/test 图像）进行多分辨率下采样，
-    生成4个分辨率级别（100% / 75% / 50% / 25%）的数据集。
+    生成 6 个分辨率级别（100% / 50% / 25% / 12.5% / 6.25% / 3.125%）的数据集。
     下采样后统一缩放回 640×640 送入模型，YOLO 归一化标注直接复用。
 
 使用方式：
     python src/data_preparation/build_resolution_datasets.py \
         --dataset satellite \
-        [--scales 100 75 50 25]
+        [--scales 100 50 25 12.5 6.25 3.125]
 
 输出目录：
     data/resolution_datasets_{satellite|uav}/
-    ├── scale_100/   （原始分辨率，直接复制）
-    ├── scale_75/    （75% 下采样后缩放回 640）
-    ├── scale_50/    （50% 下采样后缩放回 640）
-    └── scale_25/    （25% 下采样后缩放回 640）
+    ├── scale_100/     （原始分辨率，直接复制）
+    ├── scale_50/      （50% 下采样后缩放回 640）
+    ├── scale_25/      （25% 下采样后缩放回 640）
+    ├── scale_12.5/    （12.5% 下采样后缩放回 640）
+    ├── scale_6.25/    （6.25% 下采样后缩放回 640）
+    └── scale_3.125/   （3.125% 下采样后缩放回 640）
     每个子目录结构与原始 YOLO 数据集相同（images/train|val|test + labels/train|val|test）
 """
 
 from __future__ import annotations
 
 import argparse
+import math
 import os
 import shutil
 import sys
@@ -31,9 +34,6 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-
-import matplotlib
-matplotlib.use("Agg")
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
@@ -45,15 +45,22 @@ def parse_args():
     parser = argparse.ArgumentParser(description="多分辨率数据集构建脚本")
     parser.add_argument("--dataset", type=str, required=True,
                         choices=["satellite", "uav"])
-    parser.add_argument("--scales",  type=int, nargs="+",
-                        default=[100, 75, 50, 25],
-                        help="分辨率百分比列表，默认 100 75 50 25")
+    parser.add_argument("--scales",  type=float, nargs="+",
+                        default=[100, 50, 25, 12.5, 6.25, 3.125],
+                        help="分辨率百分比列表，默认 100 50 25 12.5 6.25 3.125")
     parser.add_argument("--config",  type=str, default=None,
                         help="配置文件路径（默认自动推断）")
     return parser.parse_args()
 
 
-def downsample_image(img: np.ndarray, scale_pct: int, target_size: int = 640) -> np.ndarray:
+def format_scale(scale_pct: float) -> str:
+    """将分辨率比例格式化为稳定字符串，避免目录名出现多余的 .0。"""
+    if float(scale_pct).is_integer():
+        return str(int(scale_pct))
+    return str(scale_pct).rstrip("0").rstrip(".")
+
+
+def downsample_image(img: np.ndarray, scale_pct: float, target_size: int = 640) -> np.ndarray:
     """
     对图像进行下采样后缩放回目标尺寸。
 
@@ -63,22 +70,22 @@ def downsample_image(img: np.ndarray, scale_pct: int, target_size: int = 640) ->
 
     参数：
         img:         BGR 图像
-        scale_pct:   下采样百分比（100=不变, 50=缩小一半）
+        scale_pct:   下采样百分比（100=不变, 12.5=线性分辨率缩小到 1/8）
         target_size: 最终输出尺寸
 
     返回值：
         处理后的 BGR 图像，shape=(target_size, target_size, 3)
     """
-    if scale_pct == 100:
-        # 直接缩放到目标尺寸（如果已经是目标尺寸则不变）
+    if math.isclose(scale_pct, 100.0):
+        # 直接缩放到目标尺寸（如果已经是目标尺寸则不变）。
         if img.shape[0] == target_size and img.shape[1] == target_size:
             return img.copy()
         return cv2.resize(img, (target_size, target_size), interpolation=cv2.INTER_LINEAR)
 
     h, w = img.shape[:2]
-    # 步骤1：下采样
-    new_h = max(1, int(h * scale_pct / 100))
-    new_w = max(1, int(w * scale_pct / 100))
+    # 步骤1：先按线性分辨率比例缩小。这里使用 round，避免极小比例时被系统性向下截断。
+    new_h = max(1, int(round(h * scale_pct / 100.0)))
+    new_w = max(1, int(round(w * scale_pct / 100.0)))
     downsampled = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
 
     # 步骤2：缩放回目标尺寸
@@ -91,7 +98,7 @@ def build_scale_dataset(
     src_lbl_dir: str,
     dst_img_dir: str,
     dst_lbl_dir: str,
-    scale_pct: int,
+    scale_pct: float,
     target_size: int = 640,
     logger=None,
 ) -> int:
@@ -148,7 +155,7 @@ def build_scale_dataset(
 
 def generate_dataset_yaml(
     output_dir: str,
-    scale_pct: int,
+    scale_pct: float,
     dataset: str,
     class_names: list,
 ) -> str:
@@ -157,7 +164,8 @@ def generate_dataset_yaml(
 
     返回值：yaml 文件路径
     """
-    yaml_content = f"""# 多分辨率数据集配置 - {dataset} scale_{scale_pct}
+    scale_name = format_scale(scale_pct)
+    yaml_content = f"""# 多分辨率数据集配置 - {dataset} scale_{scale_name}
 # 由 build_resolution_datasets.py 自动生成
 
 path: {os.path.abspath(output_dir)}
@@ -200,8 +208,9 @@ def main():
     summary = {}
 
     for scale in args.scales:
-        scale_dir = os.path.join(output_root, f"scale_{scale}")
-        logger.info(f"\n--- 处理 scale_{scale} ---")
+        scale_name = format_scale(scale)
+        scale_dir = os.path.join(output_root, f"scale_{scale_name}")
+        logger.info(f"\n--- 处理 scale_{scale_name} ---")
 
         total = 0
         for split in splits:
@@ -223,12 +232,12 @@ def main():
         yaml_path = generate_dataset_yaml(scale_dir, scale, args.dataset, class_names)
         logger.info(f"  dataset.yaml: {yaml_path}")
         logger.info(f"  合计: {total} 张图像")
-        summary[scale] = total
+        summary[scale_name] = total
 
     # 输出汇总
     logger.info("\n=== 构建完成 ===")
-    for scale, total in summary.items():
-        logger.info(f"  scale_{scale}: {total} 张图像 → {output_root}/scale_{scale}/")
+    for scale_name, total in summary.items():
+        logger.info(f"  scale_{scale_name}: {total} 张图像 → {output_root}/scale_{scale_name}/")
 
 
 if __name__ == "__main__":

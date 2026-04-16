@@ -21,7 +21,8 @@ bash scripts/install_env.sh
 ```
 .
 ├── configs/                    # 配置文件
-│   ├── satellite_config.yaml   # 卫星数据集参数
+│   ├── satellite_config.yaml   # 卫星 baseline 数据集参数
+│   ├── satellite_cbam_config.yaml # 卫星 CBAM 训练参数
 │   ├── uav_config.yaml         # 无人机数据集参数
 │   └── predict_config.yaml     # 大图预测参数（按 satellite/uav 拆分位置）
 ├── scripts/                    # 一键运行脚本
@@ -29,8 +30,9 @@ bash scripts/install_env.sh
 │   ├── run_train_pipeline.py   # P2/P3 训练+评估流水线
 │   ├── run_predict.py          # P4 批量大图预测
 │   ├── run_resolution_pipeline.py  # P5 分辨率实验流水线
+│   ├── run_satellite_lowres_multiseed.py # Satellite 低分辨率多 seed 复现实验
 │   ├── run_history_predict.py  # 历史时序批量预测
-│   └── run_cbam_ablation.py    # UAV CBAM 消融实验素材生成
+│   └── run_cbam_ablation.py    # UAV / Satellite CBAM 消融实验素材生成
 ├── src/
 │   ├── data_preparation/       # 数据预处理、增强、数据集构建
 │   ├── train/                  # 训练脚本（YOLOv8/YOLOv5/U-Net/FCN）
@@ -90,6 +92,9 @@ python scripts/run_predict.py --dataset uav \
 # 卫星（GPU 0），无人机（GPU 1）并行
 python scripts/run_resolution_pipeline.py --dataset satellite --device 0
 python scripts/run_resolution_pipeline.py --dataset uav --device 1
+
+# 卫星低分辨率多 seed 复现实验
+python scripts/run_satellite_lowres_multiseed.py --device 0 --seeds 42 43 44
 ```
 
 ### P6：多模型对比实验
@@ -111,21 +116,43 @@ python src/evaluate/compare_models.py --dataset satellite \
     --fcn_weights    runs/satellite/fcn/satellite_fcn/best.pt
 ```
 
-### 补充实验：UAV CBAM 消融
+### 补充实验：YOLOv8 CBAM 消融（UAV / Satellite）
 
 ```bash
+# UAV
 python scripts/run_cbam_ablation.py \
+    --dataset uav \
     --baseline_weight runs/uav/yolov8/uav_yolov8/weights/best.pt \
     --cbam_weight runs/uav/yolov8/uav_yolov8_cbam/weights/best.pt \
+    --device 0
+
+# Satellite
+python src/train/train_yolov8.py --dataset satellite \
+    --config configs/satellite_cbam_config.yaml --device 0
+python src/train/train_yolov8.py --dataset satellite \
+    --name satellite_yolov8n_baseline --device 0
+python src/evaluate/evaluate.py --dataset satellite \
+    --weights runs/satellite/yolov8/satellite_yolov8n_baseline/weights/best.pt \
+    --output_dir results/phase5_cbam_ablation/satellite_baseline
+python src/evaluate/evaluate.py --dataset satellite \
+    --config configs/satellite_cbam_config.yaml \
+    --weights runs/satellite/yolov8/satellite_yolov8_cbam/weights/best.pt \
+    --output_dir results/phase5_cbam_ablation/satellite_cbam
+python scripts/run_cbam_ablation.py \
+    --dataset satellite \
+    --baseline_weight runs/satellite/yolov8/satellite_yolov8n_baseline/weights/best.pt \
+    --cbam_weight runs/satellite/yolov8/satellite_yolov8_cbam/weights/best.pt \
     --device 0
 ```
 
 输出：`results/phase5_cbam_ablation/`
 
 说明：
-- 定量结果：`cbam_ablation_uav.csv`
-- 论文柱状图：`cbam_ablation_uav_bar.png/.pdf`
-- 定性对比图：`cbam_ablation_uav_qualitative.png/.pdf`
+- UAV 定量结果：`cbam_ablation_uav.csv`
+- Satellite 定量结果：`cbam_ablation_satellite.csv`
+- Satellite 消融统一使用同规模 `YOLOv8n baseline`（`satellite_yolov8n_baseline`）对比 `YOLOv8n + CBAM`，避免与更大模型基线混用。
+- 论文柱状图：`cbam_ablation_{uav|satellite}_bar.png/.pdf`
+- 定性对比图：`cbam_ablation_{uav|satellite}_qualitative.png/.pdf`
 
 ---
 
@@ -147,10 +174,23 @@ python scripts/run_cbam_ablation.py \
 
 ### P5：分辨率影响分析（mAP@0.5）
 
-| 数据集 | 100% | 75% | 50% | 25% |
-|--------|------|-----|-----|-----|
-| satellite | 0.667 | 0.446 | 0.645 | 0.556 |
-| uav | 0.950 | 0.877 | **0.957** | 0.897 |
+| 数据集 | 100% | 50% | 25% | 12.5% | 6.25% | 3.125% |
+|--------|------|-----|-----|-------|------|--------|
+| satellite | 0.6668 | 0.5837 | 0.6667 | 0.0000 | 0.6111 | 0.0000 |
+| uav | 0.9795 | 0.9890 | 0.9812 | 0.9855 | 0.9344 | 0.9160 |
+
+**Satellite 低分辨率多 seed 复现实验（3 seeds）**
+
+| Scale | seed 42 | seed 43 | seed 44 | mAP@0.5 mean ± std |
+|-------|---------|---------|---------|--------------------|
+| 12.5% | 0.0000 | 0.4186 | 0.0000 | 0.1395 ± 0.2417 |
+| 6.25% | 0.6111 | 0.0000 | 0.0000 | 0.2037 ± 0.3528 |
+| 3.125% | 0.0000 | 0.0000 | 0.0000 | 0.0000 ± 0.0000 |
+
+结论：
+- `satellite` 在极低分辨率端的 `0 → 0.6111 → 0` 不是稳定规律，更像低分辨率端训练随机性与小测试集共同导致的高波动现象。
+- `6.25%` 并未稳定高于 `12.5%`，单次高值主要来自某个 seed 偶发命中少量目标。
+- `3.125%` 在 3 个 seed 上均为 `0.0000`，说明该档位下卫星林窗检测已基本失效。
 
 ### P6：多模型对比
 
@@ -174,16 +214,25 @@ python scripts/run_cbam_ablation.py \
 
 > U-Net/FCN 为分割模型，mAP 通过 mask→bbox 后处理近似计算，仅可作为同一后处理流程下的参考值，不宜与检测模型直接等价比较。
 
-### 补充实验：CBAM 消融（UAV）
+### 补充实验：CBAM 消融（UAV / Satellite）
+
+**UAV**
 
 | 模型 | Precision | Recall | mAP@0.5 | mAP@0.5:0.95 | F1 | Params(M) | FLOPs(G) | FPS |
 |------|-----------|--------|---------|--------------|----|-----------|----------|-----|
 | YOLOv8n | 0.974 | 0.950 | 0.974 | 0.709 | 0.962 | 3.01 | 8.1 | 58.4 |
 | YOLOv8n + CBAM | **1.000** | **0.964** | **0.987** | **0.801** | **0.982** | 3.20 | 8.3 | 46.9 |
 
+**Satellite**
+
+| 模型 | Precision | Recall | mAP@0.5 | mAP@0.5:0.95 | F1 | Params(M) | FLOPs(G) | FPS |
+|------|-----------|--------|---------|--------------|----|-----------|----------|-----|
+| YOLOv8n | **0.971** | 0.333 | 0.584 | **0.398** | 0.496 | 3.01 | 8.1 | 47.1 |
+| YOLOv8n + CBAM | 0.804 | **0.556** | **0.605** | 0.193 | **0.657** | 3.20 | 8.3 | 56.1 |
+
 结论：
 - CBAM 在 UAV 测试集上带来稳定增益，其中 `mAP@0.5:0.95` 绝对提升 `0.092`，对论文更有说服力。
-- 代价是参数量由 `3.01M` 增至 `3.20M`，FPS 由 `58.4` 降至 `46.9`，属于可接受的精度-速度折中。
+- 在 Satellite 测试集上，CBAM 将 `Recall` 从 `0.333` 提升到 `0.556`，`mAP@0.5` 从 `0.584` 小幅提升到 `0.605`，`F1` 从 `0.496` 提升到 `0.657`；但 `Precision` 与 `mAP@0.5:0.95` 下降，说明其收益主要体现在更积极地召回目标，而高 IoU 下的定位稳定性仍需进一步优化。
 - 对应图表与汇总表位于 `results/phase5_cbam_ablation/`。
 
 ---
@@ -192,7 +241,8 @@ python scripts/run_cbam_ablation.py \
 
 | 模型 | 路径 | mAP@0.5 |
 |------|------|---------|
-| YOLOv8 satellite | `runs/satellite/yolov8/satellite_yolov8/weights/best.pt` | 0.418 |
+| YOLOv8 satellite baseline | `runs/satellite/yolov8/satellite_yolov8n_baseline/weights/best.pt` | 0.584 |
+| YOLOv8 satellite + CBAM | `runs/satellite/yolov8/satellite_yolov8_cbam/weights/best.pt` | 0.605 |
 | YOLOv8 uav baseline | `runs/uav/yolov8/uav_yolov8/weights/best.pt` | 0.974 |
 | YOLOv8 uav + CBAM | `runs/uav/yolov8/uav_yolov8_cbam/weights/best.pt` | 0.987 |
 | YOLOv5 satellite | `runs/satellite/yolov5/satellite_yolov5n/weights/best.pt` | 0.630 |

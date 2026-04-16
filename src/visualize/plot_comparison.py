@@ -28,7 +28,7 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.utils.plot_utils import setup_plot_style, save_fig, PALETTE, MODEL_COLORS, HATCHES, MARKERS
+from src.utils.plot_utils import setup_plot_style, save_fig, PALETTE, MODEL_COLORS, MARKERS
 from src.utils.logger import get_logger
 
 # 论文中的模型展示顺序固定为检测模型在前、分割模型在后，
@@ -89,8 +89,11 @@ def load_metrics(output_dir: str) -> dict:
 
 def plot_metrics_bar(results: dict, output_dir: str) -> None:
     """
-    绘制各模型指标对比柱状图（卫星/无人机分组）。
-    论文版式以指标为子图、数据集为组，减少重复标题并提升双栏排版可读性。
+    按数据集分别绘制各模型指标对比柱状图。
+
+    说明：
+        UAV 与 satellite 单独成图，柱状图不再用数据集分组，避免不同数据源混在
+        同一张图中；模型图例放在图外顶部，避免遮挡柱体与数值标注。
     """
     setup_plot_style()
 
@@ -105,28 +108,26 @@ def plot_metrics_bar(results: dict, output_dir: str) -> None:
     if not datasets:
         return
 
-    all_models = get_model_names(results)
-
     dataset_labels = {"satellite": "Satellite", "uav": "UAV"}
-    x = np.arange(len(datasets))
-    width = 0.16 if len(all_models) >= 4 else 0.22
 
-    fig, axes = plt.subplots(2, 2, figsize=(7.0, 4.9), sharey=True)
-    axes = axes.reshape(-1)
+    for dataset in datasets:
+        model_data = results[dataset]
+        model_names = get_model_names({dataset: model_data})
+        x = np.arange(len(model_names))
 
-    for ax, (metric_key, metric_label) in zip(axes, metrics_to_plot):
-        for idx, model_name in enumerate(all_models):
-            values = [results[dataset].get(model_name, {}).get(metric_key, 0) for dataset in datasets]
-            offset = (idx - (len(all_models) - 1) / 2) * width
+        fig, axes = plt.subplots(2, 2, figsize=(7.0, 4.9), sharey=True)
+        axes = axes.reshape(-1)
+
+        for ax, (metric_key, metric_label) in zip(axes, metrics_to_plot):
+            values = [model_data.get(model_name, {}).get(metric_key, 0) for model_name in model_names]
+            colors = [MODEL_COLORS.get(model_name, PALETTE["gray"]) for model_name in model_names]
             bars = ax.bar(
-                x + offset,
+                x,
                 values,
-                width,
-                label=model_name,
-                color=MODEL_COLORS.get(model_name, PALETTE["gray"]),
+                0.56,
+                color=colors,
                 edgecolor="#222222",
                 linewidth=0.6,
-                hatch=HATCHES[idx % len(HATCHES)],
                 alpha=0.92,
             )
             for bar, value in zip(bars, values):
@@ -138,31 +139,43 @@ def plot_metrics_bar(results: dict, output_dir: str) -> None:
                         ha="center",
                         va="bottom",
                         fontsize=6.5,
-                        rotation=90 if len(all_models) > 3 else 0,
                     )
 
-        ax.set_title(metric_label, pad=4)
-        ax.set_xticks(x)
-        ax.set_xticklabels([dataset_labels.get(d, d.upper()) for d in datasets])
-        ax.set_ylim(0, 1.06)
+            ax.set_title(metric_label, pad=4)
+            ax.set_xticks(x)
+            ax.set_xticklabels(model_names, rotation=20, ha="right")
+            ax.set_ylim(0, 1.08)
 
-    for ax in axes[::2]:
-        ax.set_ylabel("Score")
+        for ax in axes[::2]:
+            ax.set_ylabel("Score")
 
-    handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="upper center", ncol=len(all_models), frameon=False, bbox_to_anchor=(0.5, 1.00))
-    fig.tight_layout(rect=[0, 0, 1, 0.94])
+        legend_handles = [
+            plt.Line2D([0], [0], marker="s", color="none", markerfacecolor=MODEL_COLORS.get(model_name, PALETTE["gray"]),
+                       markeredgecolor="#222222", markersize=6, label=model_name)
+            for model_name in model_names
+        ]
+        fig.legend(
+            handles=legend_handles,
+            loc="upper center",
+            ncol=len(model_names),
+            frameon=False,
+            bbox_to_anchor=(0.5, 1.01),
+        )
+        fig.suptitle(dataset_labels.get(dataset, dataset.upper()), y=1.05, fontsize=10)
+        fig.tight_layout(rect=[0, 0, 1, 0.92])
 
-    out_path = os.path.join(output_dir, "comparison_bar.png")
-    save_fig(fig, out_path)
-    plt.close(fig)
-    print(f"[plot_comparison] 对比柱状图已保存：{out_path}")
+        out_path = os.path.join(output_dir, f"comparison_bar_{dataset}.png")
+        save_fig(fig, out_path)
+        plt.close(fig)
+        print(f"[plot_comparison] 对比柱状图已保存：{out_path}")
 
 
 def plot_speed_accuracy(results: dict, output_dir: str) -> None:
     """
-    绘制速度 vs 精度散点图（气泡大小 = 参数量）。
-    采用同一坐标系比较全部数据集，marker 形状区分数据集，颜色区分模型。
+    按数据集分别绘制速度 vs 精度散点图（气泡大小 = 参数量）。
+
+    说明：
+        每张图只展示一个数据集，图例统一放在图外顶部，避免落在散点或标注上。
     """
     setup_plot_style()
 
@@ -171,13 +184,15 @@ def plot_speed_accuracy(results: dict, output_dir: str) -> None:
         return
 
     dataset_labels = {"satellite": "Satellite", "uav": "UAV"}
-    all_models = get_model_names(results)
-    fig, ax = plt.subplots(figsize=(5.6, 3.5))
 
-    all_fps = []
     for dataset in datasets:
-        for model_name in all_models:
-            metrics = results[dataset].get(model_name)
+        model_data = results[dataset]
+        model_names = get_model_names({dataset: model_data})
+        fig, ax = plt.subplots(figsize=(5.4, 3.5))
+
+        all_fps = []
+        for model_name in model_names:
+            metrics = model_data.get(model_name)
             if not metrics:
                 continue
             fps = metrics.get("fps", 0)
@@ -190,52 +205,53 @@ def plot_speed_accuracy(results: dict, output_dir: str) -> None:
                 map50,
                 s=size,
                 color=MODEL_COLORS.get(model_name, PALETTE["gray"]),
-                marker=MARKERS[datasets.index(dataset) % len(MARKERS)],
+                marker=MARKERS[0],
                 edgecolors="#222222",
                 linewidth=0.6,
                 alpha=0.9,
                 zorder=5,
             )
             ax.annotate(
-                f"{model_name}-{dataset_labels.get(dataset, dataset).split()[0]}",
+                model_name,
                 (fps, map50),
                 textcoords="offset points",
-                xytext=(3, 2),
+                xytext=(4, 3),
                 fontsize=6.8,
             )
 
-    ax.set_xlabel("Inference speed (FPS)")
-    ax.set_ylabel("mAP@0.5")
-    ax.set_ylim(0, 1.03)
-    if all_fps:
-        ax.set_xlim(left=max(0, min(all_fps) * 0.85), right=max(all_fps) * 1.15)
+        ax.set_title(dataset_labels.get(dataset, dataset.upper()), pad=4)
+        ax.set_xlabel("Inference speed (FPS)")
+        ax.set_ylabel("mAP@0.5")
+        ax.set_ylim(0, 1.03)
+        if all_fps:
+            ax.set_xlim(left=max(0, min(all_fps) * 0.85), right=max(all_fps) * 1.18)
 
-    # 单独构造简洁图例，避免散点数量过多导致 legend 拥挤。
-    model_handles = [
-        plt.Line2D([0], [0], marker="o", color="none", markerfacecolor=MODEL_COLORS.get(m, PALETTE["gray"]),
-                   markeredgecolor="#222222", markersize=6, label=m)
-        for m in all_models
-    ]
-    dataset_handles = [
-        plt.Line2D([0], [0], marker=MARKERS[i % len(MARKERS)], color="#222222", linestyle="none",
-                   markerfacecolor="white", markersize=6, label=dataset_labels.get(d, d.upper()))
-        for i, d in enumerate(datasets)
-    ]
-    first_legend = ax.legend(handles=model_handles, loc="lower right", frameon=False, title="Model", title_fontsize=8)
-    ax.add_artist(first_legend)
-    ax.legend(handles=dataset_handles, loc="lower left", frameon=False, title="Dataset", title_fontsize=8)
+        model_handles = [
+            plt.Line2D([0], [0], marker="o", color="none", markerfacecolor=MODEL_COLORS.get(model_name, PALETTE["gray"]),
+                       markeredgecolor="#222222", markersize=6, label=model_name)
+            for model_name in model_names
+        ]
+        fig.legend(
+            handles=model_handles,
+            loc="upper center",
+            ncol=len(model_names),
+            frameon=False,
+            bbox_to_anchor=(0.5, 1.02),
+        )
 
-    fig.tight_layout(pad=0.5)
-    out_path = os.path.join(output_dir, "speed_accuracy.png")
-    save_fig(fig, out_path)
-    plt.close(fig)
-    print(f"[plot_comparison] 速度-精度散点图已保存：{out_path}")
+        fig.tight_layout(rect=[0, 0, 1, 0.90])
+        out_path = os.path.join(output_dir, f"speed_accuracy_{dataset}.png")
+        save_fig(fig, out_path)
+        plt.close(fig)
+        print(f"[plot_comparison] 速度-精度散点图已保存：{out_path}")
 
 
 def plot_radar_chart(results: dict, output_dir: str) -> None:
     """
-    绘制综合性能雷达图（4个维度：精度/召回/速度/轻量化）。
-    保留雷达图用于综合展示，但压缩留白并弱化填充，避免论文中显得花哨。
+    按数据集分别绘制综合性能雷达图（4个维度：精度/召回/速度/轻量化）。
+
+    说明：
+        每个数据集单独导出，图例放在图外底部，避免遮挡雷达图主体。
     """
     setup_plot_style()
 
@@ -249,22 +265,14 @@ def plot_radar_chart(results: dict, output_dir: str) -> None:
     angles += angles[:1]
     dataset_labels = {"satellite": "Satellite", "uav": "UAV"}
 
-    fig, axes = plt.subplots(
-        1,
-        len(datasets),
-        figsize=(3.2 * len(datasets), 3.25),
-        subplot_kw=dict(polar=True),
-    )
-    if len(datasets) == 1:
-        axes = [axes]
-
-    for ax, dataset in zip(axes, datasets):
+    for dataset in datasets:
         model_data = results[dataset]
         if not model_data:
             continue
 
-        all_fps = [m.get("fps", 0) for m in model_data.values()]
-        all_params = [m.get("params_M", 1) for m in model_data.values()]
+        fig, ax = plt.subplots(figsize=(3.8, 3.9), subplot_kw=dict(polar=True))
+        all_fps = [model_metrics.get("fps", 0) for model_metrics in model_data.values()]
+        all_params = [model_metrics.get("params_M", 1) for model_metrics in model_data.values()]
         max_fps = max(all_fps) if max(all_fps) > 0 else 1
         max_params = max(all_params) if max(all_params) > 0 else 1
 
@@ -289,13 +297,13 @@ def plot_radar_chart(results: dict, output_dir: str) -> None:
         ax.set_yticks([0.25, 0.50, 0.75, 1.00])
         ax.set_yticklabels(["", "0.5", "", "1.0"], fontsize=7)
         ax.set_title(dataset_labels.get(dataset, dataset.upper()), pad=10)
-        ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.10), ncol=2, frameon=False, fontsize=7)
+        ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.08), ncol=2, frameon=False, fontsize=7)
 
-    fig.tight_layout(pad=0.5)
-    out_path = os.path.join(output_dir, "radar_chart.png")
-    save_fig(fig, out_path)
-    plt.close(fig)
-    print(f"[plot_comparison] 雷达图已保存：{out_path}")
+        fig.tight_layout(rect=[0, 0.06, 1, 1])
+        out_path = os.path.join(output_dir, f"radar_chart_{dataset}.png")
+        save_fig(fig, out_path)
+        plt.close(fig)
+        print(f"[plot_comparison] 雷达图已保存：{out_path}")
 
 
 def main():

@@ -45,16 +45,21 @@ def run_step(cmd: list, step_name: str, logger) -> bool:
     return True
 
 
-def find_best_weights(dataset: str, model: str) -> str | None:
+def find_best_weights(dataset: str, config_path: str | None = None) -> str | None:
     """
     自动查找最新实验的 best.pt 路径。
+
+    参数：
+        dataset:     数据集名称，仅在未显式传入配置文件时用于推断默认配置路径。
+        config_path: 可选训练配置路径；用于 satellite CBAM 这类与 baseline 分离的专用配置。
 
     返回值：
         best.pt 路径字符串，或 None（未找到）
     """
     import yaml
-    config_path = PROJECT_ROOT / f"configs/{dataset}_config.yaml"
-    with open(config_path, "r", encoding="utf-8") as f:
+
+    resolved_config_path = Path(config_path) if config_path else PROJECT_ROOT / f"configs/{dataset}_config.yaml"
+    with open(resolved_config_path, "r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
 
     save_dir = PROJECT_ROOT / cfg["train"]["save_dir"]
@@ -87,6 +92,7 @@ def run_pipeline(dataset: str, args, logger) -> bool:
             python, "src/train/train_yolov8.py",
             "--dataset", dataset,
         ]
+        if args.config:  train_cmd += ["--config",  args.config]
         if args.model:   train_cmd += ["--model",   args.model]
         if args.epochs:  train_cmd += ["--epochs",  str(args.epochs)]
         if args.batch:   train_cmd += ["--batch",   str(args.batch)]
@@ -98,7 +104,7 @@ def run_pipeline(dataset: str, args, logger) -> bool:
             return False
 
         # 自动查找刚训练好的 best.pt
-        weights = find_best_weights(dataset, args.model or "yolov8n")
+        weights = find_best_weights(dataset, config_path=args.config)
         if weights is None:
             logger.error("未找到 best.pt，请手动指定 --weights 路径")
             return False
@@ -130,6 +136,7 @@ def main():
     parser.add_argument("--dataset",   type=str, choices=["satellite", "uav", "all"],
                         default="all")
     # 训练参数（可覆盖配置文件）
+    parser.add_argument("--config",    type=str,   help="训练配置文件路径，默认按数据集自动推断")
     parser.add_argument("--model",     type=str,   help="模型规格，如 yolov8n / yolov8s / yolov8m")
     parser.add_argument("--epochs",    type=int,   help="训练轮数")
     parser.add_argument("--batch",     type=int,   help="批大小")

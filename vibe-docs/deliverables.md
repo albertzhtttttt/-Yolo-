@@ -240,44 +240,35 @@ results/phase1_predict/{satellite|uav}/{位置名}/
 
 | 文件 | 说明 |
 |------|------|
-| `src/data_preparation/build_resolution_datasets.py` | 构建100%/75%/50%/25%四个分辨率数据集 |
-| `scripts/run_resolution_pipeline.py` | 一键构建→训练→评估流水线，支持 `--device` 指定GPU |
-| `src/visualize/plot_resolution_analysis.py` | 分辨率影响折线图与柱状图 |
+| `src/data_preparation/build_resolution_datasets.py` | 构建 `100% / 50% / 25% / 12.5% / 6.25% / 3.125%` 六个分辨率数据集 |
+| `scripts/run_resolution_pipeline.py` | 一键构建→训练→评估流水线，支持 `--device` 指定 GPU |
+| `src/visualize/plot_resolution_analysis.py` | 六档分辨率影响折线图与柱状图 |
 
 ### 实验结果
 
-**Satellite mAP@0.5 vs 分辨率：**
+**主实验（单次运行，mAP@0.5）**
 
-| Scale | mAP@0.5 | Precision | Recall | F1 |
-|-------|---------|-----------|--------|----|
-| 100% | 0.667 | 1.000 | 0.439 | 0.610 |
-| 75%  | 0.446 | 0.746 | 0.333 | 0.461 |
-| 50%  | 0.645 | 0.800 | 0.444 | 0.571 |
-| 25%  | 0.556 | 0.750 | 0.333 | 0.462 |
+| 数据集 | 100% | 50% | 25% | 12.5% | 6.25% | 3.125% |
+|--------|------|-----|-----|-------|------|--------|
+| satellite | 0.6668 | 0.5837 | 0.6667 | 0.0000 | 0.6111 | 0.0000 |
+| uav | 0.9795 | 0.9890 | 0.9812 | 0.9855 | 0.9344 | 0.9160 |
 
-**UAV mAP@0.5 vs 分辨率：**
+**结论补充**
 
-| Scale | mAP@0.5 | Precision | Recall | F1 |
-|-------|---------|-----------|--------|----|
-| 100% | 0.950 | 1.000 | 0.900 | 0.947 |
-| 75%  | 0.877 | 0.945 | 0.775 | 0.852 |
-| 50%  | 0.957 | 0.949 | 0.925 | 0.937 |
-| 25%  | 0.897 | 0.982 | 0.800 | 0.882 |
-
-> 注：上述 satellite 指标来自 `results/phase2_resolution/satellite/scale_*/metrics.csv`；当前根目录 `results/phase2_resolution/metrics_by_scale.csv` 仅包含 UAV 汇总行。
+- UAV 在 6 个分辨率档位上都保持较高精度，对分辨率退化更鲁棒。
+- Satellite 在 `12.5%` 以下进入明显不稳定区，单次结果会出现 `0 → 0.6111 → 0` 的非单调跳动。
+- 该异常已在同日追加的 `satellite_lowres_multiseed` 实验中进一步验证，不宜直接把单次 `6.25%` 高值解释为稳定收益。
 
 ### 输出目录
 
 ```
 results/phase2_resolution/
 ├── metrics_by_scale.csv
-├── satellite/scale_{100,75,50,25}/metrics.csv
-├── uav/scale_{100,75,50,25}/metrics.csv
+├── satellite/scale_{100,50,25,12.5,6.25,3.125}/metrics.csv
+├── uav/scale_{100,50,25,12.5,6.25,3.125}/metrics.csv
 ├── resolution_analysis.png
 └── resolution_map50_bar.png
 ```
-
-> 注：当前根目录 `metrics_by_scale.csv` 仅汇总了 UAV 结果；satellite 指标需结合 `satellite/scale_*/metrics.csv` 查看。
 
 ---
 
@@ -329,30 +320,79 @@ results/phase3_comparison/
 
 ---
 
-## 2026-04-14 | P7：UAV CBAM 消融实验与论文图更新（完成）
+## 2026-04-15 | P5：Satellite 低分辨率多 seed 复现实验（完成）
 
 ### 交付文件
 
 | 文件 | 说明 |
 |------|------|
-| `scripts/run_cbam_ablation.py` | 正式的 UAV CBAM 消融实验素材生成脚本，输出汇总表、柱状图与定性对比图 |
-| `src/visualize/plot_resolution_analysis.py` | 收敛为当前论文版式使用的分辨率图顺序与紧凑画布 |
-| `src/visualize/plot_comparison.py` | 收敛为当前论文版式使用的模型顺序、图例布局与紧凑画布 |
-| `results/phase5_cbam_ablation/cbam_ablation_uav.csv` | baseline 与 CBAM 的正式消融汇总表 |
-| `results/phase5_cbam_ablation/cbam_ablation_uav_bar.png` | CBAM 消融定量柱状图 |
-| `results/phase5_cbam_ablation/cbam_ablation_uav_qualitative.png` | GT / baseline / CBAM 定性对比图 |
+| `src/train/train_yolov8.py` | 新增 `--seed` 参数，允许在不改数据划分的前提下覆盖训练随机种子 |
+| `scripts/run_satellite_lowres_multiseed.py` | 低分辨率 `12.5% / 6.25% / 3.125%` 的多 seed 训练、评估、汇总与绘图脚本 |
+| `results/phase2_resolution/satellite_lowres_multiseed/metrics_by_seed.csv` | 9 组 `scale × seed` 原始指标明细 |
+| `results/phase2_resolution/satellite_lowres_multiseed/metrics_seed_summary.csv` | 3 个低分辨率档位的 mean/std 汇总表 |
+| `results/phase2_resolution/satellite_lowres_multiseed/lowres_multiseed_map50_errorbar.png` | `mAP@0.5 mean ± std` 误差棒图 |
+| `results/phase2_resolution/satellite_lowres_multiseed/lowres_multiseed_metrics.png` | `mAP@0.5 / Precision / Recall / F1` 多指标误差棒图 |
 
 ### 关键结果
+
+| Scale | seed 42 | seed 43 | seed 44 | mAP@0.5 mean ± std |
+|-------|---------|---------|---------|--------------------|
+| 12.5% | 0.0000 | 0.4186 | 0.0000 | 0.1395 ± 0.2417 |
+| 6.25% | 0.6111 | 0.0000 | 0.0000 | 0.2037 ± 0.3528 |
+| 3.125% | 0.0000 | 0.0000 | 0.0000 | 0.0000 ± 0.0000 |
+
+### 实验结论
+
+- 先前 `satellite` 在极低分辨率端出现的 `0 → 0.6111 → 0`，在 3 个 seed 下并未表现为稳定规律，更接近低分辨率端的高波动现象。
+- `6.25%` 的单次高值并不稳健：只有 `seed=42` 命中了少量目标，`seed=43/44` 都回到 `0.0000`。
+- `3.125%` 在 3 个 seed 上均为 `0.0000`，说明该档位下卫星林窗检测已基本失效。
+- 结合 `satellite` test 集仅 `6` 张图、`9` 个目标，这组结果更支持“低分辨率 + 小样本评估导致单次结果不稳定”的解释，而不是实验串档。
+
+---
+
+## 2026-04-15 | P7：YOLOv8 CBAM 消融实验扩展到卫星数据集（完成）
+
+### 交付文件
+
+| 文件 | 说明 |
+|------|------|
+| `configs/satellite_cbam_config.yaml` | 卫星数据集专用的 YOLOv8n + CBAM 训练配置，保持与 baseline 相同的数据与增强设置 |
+| `scripts/run_cbam_ablation.py` | 正式的 YOLOv8 baseline vs CBAM 消融实验素材生成脚本，现同时支持 UAV 与 satellite |
+| `scripts/run_train_pipeline.py` | 新增 `--config` 参数，支持用专用配置文件运行卫星 CBAM 训练流水线 |
+| `results/phase5_cbam_ablation/cbam_ablation_uav.csv` | UAV baseline 与 CBAM 的正式消融汇总表 |
+| `results/phase5_cbam_ablation/cbam_ablation_satellite.csv` | 卫星 baseline 与 CBAM 的正式消融汇总表 |
+| `results/phase5_cbam_ablation/cbam_ablation_uav_bar.png` | UAV CBAM 消融定量柱状图 |
+| `results/phase5_cbam_ablation/cbam_ablation_satellite_bar.png` | 卫星 CBAM 消融定量柱状图 |
+| `results/phase5_cbam_ablation/cbam_ablation_uav_qualitative.png` | UAV 的 GT / baseline / CBAM 定性对比图 |
+| `results/phase5_cbam_ablation/cbam_ablation_satellite_qualitative.png` | 卫星的 GT / baseline / CBAM 定性对比图 |
+
+### 关键结果
+
+**UAV**
 
 | 模型 | Precision | Recall | mAP@0.5 | mAP@0.5:0.95 | F1 | Params(M) | FLOPs(G) | FPS |
 |------|-----------|--------|---------|--------------|----|-----------|----------|-----|
 | YOLOv8n | 0.974 | 0.950 | 0.974 | 0.709 | 0.962 | 3.01 | 8.1 | 58.4 |
 | YOLOv8n + CBAM | **1.000** | **0.964** | **0.987** | **0.801** | **0.982** | 3.20 | 8.3 | 46.9 |
 
+**Satellite**
+
+| 模型 | Precision | Recall | mAP@0.5 | mAP@0.5:0.95 | F1 | Params(M) | FLOPs(G) | FPS |
+|------|-----------|--------|---------|--------------|----|-----------|----------|-----|
+| YOLOv8n | **0.971** | 0.333 | 0.584 | **0.398** | 0.496 | 3.01 | 8.1 | 47.1 |
+| YOLOv8n + CBAM | 0.804 | **0.556** | **0.605** | 0.193 | **0.657** | 3.20 | 8.3 | 56.1 |
+
+### 实验结论
+
+- UAV 数据集上，CBAM 带来稳定增益，尤其 `mAP@0.5:0.95` 从 `0.709` 提升到 `0.801`，适合作为论文中“注意力机制有效”的主证据。
+- Satellite 数据集上，CBAM 将 `Recall` 从 `0.333` 提升到 `0.556`，`mAP@0.5` 从 `0.584` 提升到 `0.605`，`F1` 从 `0.496` 提升到 `0.657`，说明其主要收益来自减少漏检。
+- 但 Satellite 上 `Precision` 与 `mAP@0.5:0.95` 同时下降，表明高 IoU 下的定位稳定性仍弱于 baseline，论文表述宜突出“召回增强”而非“全面提升”。
+
 ### 本次同步说明
 
 - `tmp/visual_review_paper_style_20260413/images/results/` 中人工确认后的论文风格图，已覆盖同步到正式 `results/` 目录。
 - `results/phase2_resolution/` 与 `results/phase3_comparison/` 下的论文图现以当前手工确认版本为准。
 - `results/phase5_cbam_ablation/` 作为正式补充实验目录，后续论文引用统一从该目录取图取表。
+- 卫星消融已改为严格对等设置：baseline 使用同规模 `YOLOv8n` 权重 `runs/satellite/yolov8/satellite_yolov8n_baseline/weights/best.pt`，避免与更大规模基线混用导致结论失真。
 
 ---

@@ -74,6 +74,7 @@ def parse_args():
     parser.add_argument("--device",  type=str, help="GPU 编号，如 0 或 0,1（多卡）")
     parser.add_argument("--workers", type=int, help="DataLoader 工作进程数")
     parser.add_argument("--patience", type=int, help="早停耐心值")
+    parser.add_argument("--seed",    type=int, help="训练随机种子（用于多 seed 复现实验）")
     parser.add_argument("--name",    type=str, help="实验名称（用于区分多次运行）")
     parser.add_argument("--resume",  type=str, help="从指定权重文件断点续训")
     parser.add_argument("--no_pretrain", action="store_true",
@@ -147,6 +148,9 @@ def build_train_args(cfg: dict, args) -> dict:
         train_args["device"] = _auto_select_gpu()
     if args.workers:  train_args["workers"]   = args.workers
     if args.patience: train_args["patience"]  = args.patience
+    if args.seed is not None:
+        # 多 seed 复现实验需要只改变训练随机性，不重建数据划分；未传入时保持配置文件默认 seed。
+        train_args["seed"] = args.seed
     if args.name:     train_args["name"]      = args.name
     if args.data:     train_args["data"]      = args.data
     if args.save_dir: train_args["project"]   = args.save_dir
@@ -173,10 +177,10 @@ def main():
     logger.info(f"模型规格：{model_name}")
 
     # ── 检查 dataset.yaml 是否存在 ────────────────────────────────────────────
-    dataset_yaml = cfg["data"]["dataset_yaml"]
+    dataset_yaml = args.data or cfg["data"]["dataset_yaml"]
     if not os.path.isfile(dataset_yaml):
         logger.error(f"dataset.yaml 不存在：{dataset_yaml}")
-        logger.error("请先运行 P1 数据准备流程：python scripts/run_data_pipeline.py")
+        logger.error("请先运行 P1 数据准备流程，或确认 --data 指向的分辨率实验 dataset.yaml 已生成")
         sys.exit(1)
 
     # ── 导入 Ultralytics（延迟导入，避免未安装时报错影响其他模块）────────────

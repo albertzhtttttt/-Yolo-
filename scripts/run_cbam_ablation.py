@@ -1,19 +1,26 @@
 from __future__ import annotations
 
 """
-run_cbam_ablation.py - 生成 UAV CBAM 消融实验论文素材
+run_cbam_ablation.py - 生成 YOLOv8 baseline vs CBAM 的论文消融素材
 路径：scripts/run_cbam_ablation.py
 
 功能：
-    1. 汇总同一 UAV 测试集下 YOLOv8n baseline 与 YOLOv8n + CBAM 的评估指标；
+    1. 汇总同一测试集下 YOLOv8n baseline 与 YOLOv8n + CBAM 的评估指标；
     2. 生成论文可用的指标对比柱状图（PNG + PDF）；
-    3. 选取 UAV 测试集样例，输出 GT / baseline / CBAM 的定性对比图；
-    4. 将所有结果写入 results/phase5_cbam_ablation/，作为正式补充实验结果。
+    3. 选取测试集样例，输出 GT / baseline / CBAM 的定性对比图；
+    4. 将所有结果写入 results/phase5_cbam_ablation/，支持 uav / satellite 两个数据集。
 
 使用方式：
     python scripts/run_cbam_ablation.py \
+        --dataset uav \
         --baseline_weight runs/uav/yolov8/uav_yolov8/weights/best.pt \
         --cbam_weight runs/uav/yolov8/uav_yolov8_cbam/weights/best.pt \
+        --device 0
+
+    python scripts/run_cbam_ablation.py \
+        --dataset satellite \
+        --baseline_weight runs/satellite/yolov8/satellite_yolov8/weights/best.pt \
+        --cbam_weight runs/satellite/yolov8/satellite_yolov8_cbam/weights/best.pt \
         --device 0
 """
 
@@ -36,14 +43,29 @@ from src.train.yolo_model_loader import build_yolo_model
 from src.utils.plot_utils import HATCHES, PALETTE, save_fig, setup_plot_style
 
 
-DEFAULT_BASELINE_WEIGHT = ROOT / "runs/uav/yolov8/uav_yolov8/weights/best.pt"
-DEFAULT_CBAM_WEIGHT = ROOT / "runs/uav/yolov8/uav_yolov8_cbam/weights/best.pt"
-DEFAULT_BASELINE_METRICS = ROOT / "results/phase5_cbam_ablation/uav_baseline/metrics.csv"
-DEFAULT_CBAM_METRICS = ROOT / "results/phase5_cbam_ablation/uav_cbam/metrics.csv"
-DEFAULT_TEST_IMAGE_DIR = ROOT / "data/yolo_dataset_uav/images/test"
-DEFAULT_TEST_LABEL_DIR = ROOT / "data/yolo_dataset_uav/labels/test"
+DATASET_DEFAULTS = {
+    "uav": {
+        "baseline_weight": ROOT / "runs/uav/yolov8/uav_yolov8/weights/best.pt",
+        "cbam_weight": ROOT / "runs/uav/yolov8/uav_yolov8_cbam/weights/best.pt",
+        "baseline_metrics": ROOT / "results/phase5_cbam_ablation/uav_baseline/metrics.csv",
+        "cbam_metrics": ROOT / "results/phase5_cbam_ablation/uav_cbam/metrics.csv",
+        "test_image_dir": ROOT / "data/yolo_dataset_uav/images/test",
+        "test_label_dir": ROOT / "data/yolo_dataset_uav/labels/test",
+        "baseline_name": "YOLOv8n",
+        "cbam_name": "YOLOv8n + CBAM",
+    },
+    "satellite": {
+        "baseline_weight": ROOT / "runs/satellite/yolov8/satellite_yolov8n_baseline/weights/best.pt",
+        "cbam_weight": ROOT / "runs/satellite/yolov8/satellite_yolov8_cbam/weights/best.pt",
+        "baseline_metrics": ROOT / "results/phase5_cbam_ablation/satellite_baseline/metrics.csv",
+        "cbam_metrics": ROOT / "results/phase5_cbam_ablation/satellite_cbam/metrics.csv",
+        "test_image_dir": ROOT / "data/yolo_dataset_satellite/images/test",
+        "test_label_dir": ROOT / "data/yolo_dataset_satellite/labels/test",
+        "baseline_name": "YOLOv8n",
+        "cbam_name": "YOLOv8n + CBAM",
+    },
+}
 DEFAULT_OUTPUT_DIR = ROOT / "results/phase5_cbam_ablation"
-
 METRIC_COLUMNS = ["precision", "recall", "map50", "map50_95", "f1"]
 EXTRA_COLUMNS = ["params_M", "flops_G", "fps"]
 SUMMARY_COLUMNS = METRIC_COLUMNS + EXTRA_COLUMNS
@@ -57,26 +79,62 @@ METRIC_LABELS = {
 
 
 def parse_args() -> argparse.Namespace:
-    """解析命令行参数，默认路径指向当前正式 UAV 消融实验结果目录。"""
-    parser = argparse.ArgumentParser(description="生成 UAV CBAM 消融实验论文素材")
-    parser.add_argument("--baseline_metrics", type=Path, default=DEFAULT_BASELINE_METRICS)
-    parser.add_argument("--cbam_metrics", type=Path, default=DEFAULT_CBAM_METRICS)
-    parser.add_argument("--baseline_weight", type=Path, default=DEFAULT_BASELINE_WEIGHT)
-    parser.add_argument("--cbam_weight", type=Path, default=DEFAULT_CBAM_WEIGHT)
-    parser.add_argument("--test_image_dir", type=Path, default=DEFAULT_TEST_IMAGE_DIR)
-    parser.add_argument("--test_label_dir", type=Path, default=DEFAULT_TEST_LABEL_DIR)
-    parser.add_argument("--output_dir", type=Path, default=DEFAULT_OUTPUT_DIR)
+    """
+    解析命令行参数，并根据数据集类型自动补全默认路径。
+
+    设计原因：
+        1. UAV 与 satellite 的消融流程完全对齐，但输入权重、评估结果和测试集目录不同；
+        2. 通过 `--dataset` 统一切换默认值，可避免为两个数据集维护两份脚本；
+        3. 如需覆盖默认路径，仍可通过命令行参数显式指定。
+    """
+    parser = argparse.ArgumentParser(description="生成 YOLOv8 baseline vs CBAM 的论文消融素材")
+    parser.add_argument("--dataset", type=str, choices=["uav", "satellite"], required=True,
+                        help="选择要生成消融结果的数据集")
+    parser.add_argument("--baseline_metrics", type=Path, default=None,
+                        help="baseline 的 metrics.csv 路径，默认按数据集自动推断")
+    parser.add_argument("--cbam_metrics", type=Path, default=None,
+                        help="CBAM 的 metrics.csv 路径，默认按数据集自动推断")
+    parser.add_argument("--baseline_weight", type=Path, default=None,
+                        help="baseline 的 best.pt 路径，默认按数据集自动推断")
+    parser.add_argument("--cbam_weight", type=Path, default=None,
+                        help="CBAM 的 best.pt 路径，默认按数据集自动推断")
+    parser.add_argument("--test_image_dir", type=Path, default=None,
+                        help="测试集图像目录，默认按数据集自动推断")
+    parser.add_argument("--test_label_dir", type=Path, default=None,
+                        help="测试集标签目录，默认按数据集自动推断")
+    parser.add_argument("--output_dir", type=Path, default=DEFAULT_OUTPUT_DIR,
+                        help="统一输出根目录，默认 results/phase5_cbam_ablation")
     parser.add_argument("--num_samples", type=int, default=6, help="定性图样例数量")
     parser.add_argument("--conf", type=float, default=0.25, help="定性图预测置信度阈值")
     parser.add_argument("--device", type=str, default="0", help="Ultralytics 推理设备")
     parser.add_argument("--speed_samples", type=int, default=30, help="用于估算 FPS 的测试图像数量")
-    parser.add_argument("--baseline_name", type=str, default="YOLOv8n", help="baseline 在表格和图中的显示名称")
-    parser.add_argument("--cbam_name", type=str, default="YOLOv8n + CBAM", help="CBAM 模型在表格和图中的显示名称")
-    return parser.parse_args()
+    parser.add_argument("--baseline_name", type=str, default=None,
+                        help="baseline 在表格和图中的显示名称，默认按数据集自动设置")
+    parser.add_argument("--cbam_name", type=str, default=None,
+                        help="CBAM 模型在表格和图中的显示名称，默认按数据集自动设置")
+    args = parser.parse_args()
+
+    defaults = DATASET_DEFAULTS[args.dataset]
+    args.baseline_metrics = args.baseline_metrics or defaults["baseline_metrics"]
+    args.cbam_metrics = args.cbam_metrics or defaults["cbam_metrics"]
+    args.baseline_weight = args.baseline_weight or defaults["baseline_weight"]
+    args.cbam_weight = args.cbam_weight or defaults["cbam_weight"]
+    args.test_image_dir = args.test_image_dir or defaults["test_image_dir"]
+    args.test_label_dir = args.test_label_dir or defaults["test_label_dir"]
+    args.baseline_name = args.baseline_name or defaults["baseline_name"]
+    args.cbam_name = args.cbam_name or defaults["cbam_name"]
+    return args
 
 
-def read_metric_row(path: Path, display_name: str) -> dict[str, float | str]:
-    """读取 evaluate.py 生成的 metrics.csv，并替换成论文中明确的模型名称。"""
+def read_metric_row(path: Path, display_name: str, dataset: str) -> dict[str, float | str]:
+    """
+    读取 evaluate.py 生成的 metrics.csv，并替换成论文中明确的模型名称。
+
+    参数：
+        path:         metrics.csv 路径
+        display_name: 表格中展示的模型名称
+        dataset:      当前消融所属数据集名称（uav / satellite）
+    """
     if not path.is_file():
         raise FileNotFoundError(f"缺少评估指标文件：{path}")
 
@@ -88,7 +146,7 @@ def read_metric_row(path: Path, display_name: str) -> dict[str, float | str]:
     source = rows[0]
     row: dict[str, float | str] = {
         "model": display_name,
-        "dataset": "uav",
+        "dataset": dataset,
     }
     for key in SUMMARY_COLUMNS:
         row[key] = float(source.get(key, 0) or 0)
@@ -103,13 +161,20 @@ def add_model_profile(
     device: str,
     speed_samples: int,
 ) -> None:
-    """补充参数量、FLOPs 和 FPS，避免论文表格只有精度指标。"""
+    """
+    补充参数量、FLOPs 和 FPS，避免论文表格只有精度指标。
+
+    说明：
+        - 参数量直接统计模型参数总数；
+        - FLOPs 优先读取 Ultralytics 模型 YAML 中已有字段；
+        - 若 YAML 中缺失 FLOPs，则退回到同一结构在 640×640 输入下的经验值，
+          避免结果表出现 0.00 GFLOPs 这种明显误导的占位值；
+        - FPS 使用测试集样本做 warm-up 后的实测平均值。
+    """
     row["params_M"] = sum(param.numel() for param in model.model.parameters()) / 1e6
     flops = getattr(model.model, "yaml", {}).get("flops", 0) if hasattr(model.model, "yaml") else 0
     row["flops_G"] = float(flops or 0)
 
-    # Ultralytics 的 YAML 不总是保留 FLOPs 字段；这里使用当前实验实测摘要作为兜底，
-    # 避免论文汇总表出现 0.00 GFLOPs 这种误导性结果。
     if row["flops_G"] == 0:
         row["flops_G"] = 8.3 if "CBAM" in str(row["model"]) else 8.1
 
@@ -118,7 +183,6 @@ def add_model_profile(
         row["fps"] = 0.0
         return
 
-    # 先做一次 warm-up，降低 CUDA 首次启动对 FPS 估算的影响。
     model.predict(str(samples[0]), conf=conf, device=device, verbose=False)
     start_time = time.perf_counter()
     for image_path in samples:
@@ -127,10 +191,14 @@ def add_model_profile(
     row["fps"] = len(samples) / elapsed
 
 
-def save_summary_csv(rows: list[dict[str, float | str]], output_dir: Path) -> Path:
-    """保存 baseline 与 CBAM 的消融汇总表，并额外写入相对提升比例。"""
+def save_summary_csv(rows: list[dict[str, float | str]], output_dir: Path, dataset: str) -> Path:
+    """
+    保存 baseline 与 CBAM 的消融汇总表，并额外写入相对提升比例。
+
+    输出文件名会显式包含数据集名称，便于 UAV 与 satellite 结果并存。
+    """
     output_dir.mkdir(parents=True, exist_ok=True)
-    out_path = output_dir / "cbam_ablation_uav.csv"
+    out_path = output_dir / f"cbam_ablation_{dataset}.csv"
 
     baseline = rows[0]
     cbam = rows[1]
@@ -145,7 +213,10 @@ def save_summary_csv(rows: list[dict[str, float | str]], output_dir: Path) -> Pa
                 out_row[f"delta_{key}"] = ""
             writer.writerow(out_row)
 
-        delta_row: dict[str, float | str] = {"model": "Δ (CBAM - baseline)", "dataset": "uav"}
+        delta_row: dict[str, float | str] = {
+            "model": "Δ (CBAM - baseline)",
+            "dataset": dataset,
+        }
         for key in METRIC_COLUMNS:
             delta_row[key] = float(cbam[key]) - float(baseline[key])
             denominator = max(abs(float(baseline[key])), 1e-8)
@@ -155,8 +226,12 @@ def save_summary_csv(rows: list[dict[str, float | str]], output_dir: Path) -> Pa
     return out_path
 
 
-def plot_metric_bars(rows: list[dict[str, float | str]], output_dir: Path) -> Path:
-    """绘制 baseline 与 CBAM 在关键检测指标上的柱状对比图。"""
+def plot_metric_bars(rows: list[dict[str, float | str]], output_dir: Path, dataset: str) -> Path:
+    """
+    绘制 baseline 与 CBAM 在关键检测指标上的柱状对比图。
+
+    不同数据集的输出文件名保持独立，避免互相覆盖。
+    """
     setup_plot_style(font_size=9)
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -203,13 +278,14 @@ def plot_metric_bars(rows: list[dict[str, float | str]], output_dir: Path) -> Pa
             )
 
     ax.set_ylabel("Score")
-    ax.set_ylim(0, 1.08)
+    ax.set_ylim(0, 1.12)
     ax.set_xticks(x)
     ax.set_xticklabels([METRIC_LABELS[key] for key in METRIC_COLUMNS], rotation=18, ha="right")
-    ax.legend(loc="lower right", frameon=False)
-    fig.tight_layout()
+    # 图例放在绘图区上方，避免覆盖较高柱体和柱顶数值标注。
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, 1.20), ncol=2, frameon=False)
+    fig.tight_layout(rect=[0, 0, 1, 0.88])
 
-    out_path = output_dir / "cbam_ablation_uav_bar.png"
+    out_path = output_dir / f"cbam_ablation_{dataset}_bar.png"
     save_fig(fig, str(out_path))
     plt.close(fig)
     return out_path
@@ -271,7 +347,13 @@ def predict_boxes(model, image_path: Path, conf: float, device: str) -> list[tup
 
 
 def choose_samples(image_dir: Path, label_dir: Path, num_samples: int) -> list[Path]:
-    """优先选择带标注的测试集样例，保证定性图能展示林窗目标。"""
+    """
+    优先选择带标注的测试集样例，保证定性图能展示林窗目标。
+
+    说明：
+        UAV 与 satellite 都采用 YOLO 数据集结构，因此这里统一按
+        `images/test` 与 `labels/test` 的文件名 stem 对齐。
+    """
     suffixes = {".jpg", ".jpeg", ".png", ".tif", ".tiff"}
     candidates = [path for path in sorted(image_dir.iterdir()) if path.suffix.lower() in suffixes]
     positive: list[Path] = []
@@ -296,7 +378,11 @@ def plot_qualitative_comparison(
     baseline_model,
     cbam_model,
 ) -> Path:
-    """生成 GT / baseline / CBAM 三列定性对比图。"""
+    """
+    生成 GT / baseline / CBAM 三列定性对比图。
+
+    输出文件名会带上数据集名称，便于 UAV 与 satellite 结果并存。
+    """
     if not args.baseline_weight.is_file():
         raise FileNotFoundError(f"缺少 baseline 权重：{args.baseline_weight}")
     if not args.cbam_weight.is_file():
@@ -352,7 +438,7 @@ def plot_qualitative_comparison(
                 )
 
     fig.subplots_adjust(left=0.045, right=0.995, top=0.965, bottom=0.01, wspace=0.035, hspace=0.055)
-    out_path = output_dir / "cbam_ablation_uav_qualitative.png"
+    out_path = output_dir / f"cbam_ablation_{args.dataset}_qualitative.png"
     fig.savefig(out_path, dpi=600, bbox_inches="tight", pad_inches=0.02)
     fig.savefig(out_path.with_suffix(".pdf"), bbox_inches="tight", pad_inches=0.02)
     plt.close(fig)
@@ -360,7 +446,13 @@ def plot_qualitative_comparison(
 
 
 def main() -> None:
-    """脚本主入口：生成 CSV、指标柱状图和定性对比图。"""
+    """
+    脚本主入口：生成 CSV、指标柱状图和定性对比图。
+
+    注意：
+        该脚本只负责“汇总已有评估结果 + 生成论文素材”，
+        baseline 与 CBAM 的训练/评估应提前完成。
+    """
     args = parse_args()
     output_dir = args.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -375,14 +467,14 @@ def main() -> None:
     cbam_model, _ = build_yolo_model(str(args.cbam_weight), use_pretrained=False)
 
     rows = [
-        read_metric_row(args.baseline_metrics, args.baseline_name),
-        read_metric_row(args.cbam_metrics, args.cbam_name),
+        read_metric_row(args.baseline_metrics, args.baseline_name, args.dataset),
+        read_metric_row(args.cbam_metrics, args.cbam_name, args.dataset),
     ]
     add_model_profile(rows[0], baseline_model, image_paths, args.conf, args.device, args.speed_samples)
     add_model_profile(rows[1], cbam_model, image_paths, args.conf, args.device, args.speed_samples)
 
-    summary_csv = save_summary_csv(rows, output_dir)
-    bar_png = plot_metric_bars(rows, output_dir)
+    summary_csv = save_summary_csv(rows, output_dir, args.dataset)
+    bar_png = plot_metric_bars(rows, output_dir, args.dataset)
     qualitative_png = plot_qualitative_comparison(args, output_dir, baseline_model, cbam_model)
 
     print(f"summary_csv={summary_csv}")

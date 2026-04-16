@@ -60,9 +60,29 @@ python scripts/run_history_predict.py \
 
 ### CBAM Ablation (P7)
 ```bash
+# UAV
 python scripts/run_cbam_ablation.py \
+    --dataset uav \
     --baseline_weight runs/uav/yolov8/uav_yolov8/weights/best.pt \
     --cbam_weight runs/uav/yolov8/uav_yolov8_cbam/weights/best.pt \
+    --device 0
+
+# Satellite
+python src/train/train_yolov8.py --dataset satellite \
+    --config configs/satellite_cbam_config.yaml --device 0
+python src/train/train_yolov8.py --dataset satellite \
+    --name satellite_yolov8n_baseline --device 0
+python src/evaluate/evaluate.py --dataset satellite \
+    --weights runs/satellite/yolov8/satellite_yolov8n_baseline/weights/best.pt \
+    --output_dir results/phase5_cbam_ablation/satellite_baseline
+python src/evaluate/evaluate.py --dataset satellite \
+    --config configs/satellite_cbam_config.yaml \
+    --weights runs/satellite/yolov8/satellite_yolov8_cbam/weights/best.pt \
+    --output_dir results/phase5_cbam_ablation/satellite_cbam
+python scripts/run_cbam_ablation.py \
+    --dataset satellite \
+    --baseline_weight runs/satellite/yolov8/satellite_yolov8n_baseline/weights/best.pt \
+    --cbam_weight runs/satellite/yolov8/satellite_yolov8_cbam/weights/best.pt \
     --device 0
 ```
 
@@ -81,7 +101,7 @@ Original Data (satellite 256×256 / UAV variable)
 ```
 
 ### Configuration-Driven Design
-Core hyperparameters live in `configs/{satellite,uav,predict}_config.yaml`, while the UAV CBAM architecture is defined in `configs/yolov8_gap_cbam_p2.yaml`. Scripts load these configs and allow CLI overrides. Never hardcode reusable paths or hyperparameters — add them to the YAML configs.
+Core hyperparameters live in `configs/{satellite,satellite_cbam,uav,predict}_config.yaml`, while the shared CBAM architecture is defined in `configs/yolov8_gap_cbam_p2.yaml`. Scripts load these configs and allow CLI overrides. Never hardcode reusable paths or hyperparameters — add them to the YAML configs.
 
 ### Key Design Patterns
 - **Windowed GeoTIFF reading**: `src/predict/predict_geotiff.py` uses `rasterio` windowed reading for very large TIFs and should reuse a single opened dataset handle per image whenever possible.
@@ -114,9 +134,12 @@ Core hyperparameters live in `configs/{satellite,uav,predict}_config.yaml`, whil
 - `results/phase3_comparison/` — multi-model comparison outputs
 - `results/phase4_temporal/predictions/` — per-year temporal prediction outputs
 - `results/phase4_temporal/summaries/` — temporal CSV and charts
-- `results/phase5_cbam_ablation/` — UAV baseline vs CBAM ablation tables and paper-ready figures
+- `results/phase5_cbam_ablation/` — UAV / satellite baseline vs CBAM ablation tables and paper-ready figures
 - `logs/` — pipeline execution logs
 
 ### Best Model Weights
-- Satellite YOLOv8: `runs/satellite/yolov8/satellite_yolov8/weights/best.pt` (mAP@0.5=0.418)
+- Satellite YOLOv8 baseline: `runs/satellite/yolov8/satellite_yolov8n_baseline/weights/best.pt` (mAP@0.5=0.584)
+- Satellite YOLOv8 + CBAM: `runs/satellite/yolov8/satellite_yolov8_cbam/weights/best.pt` (mAP@0.5=0.605)
 - UAV YOLOv8 + CBAM: `runs/uav/yolov8/uav_yolov8_cbam/weights/best.pt` (mAP@0.5=0.987)
+
+Satellite CBAM ablation must compare the same-scale pair `satellite_yolov8n_baseline` vs `satellite_yolov8_cbam` to keep the conclusion fair.
